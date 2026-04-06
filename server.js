@@ -48,7 +48,7 @@ app.get('/api/state', (_req, res) => {
 });
 
 app.post('/api/moonshot', (req, res) => {
-  const { teamId, year, goal, metric, targetNumber, funding, leverageLevel, costBearer } = req.body;
+  const { teamId, year, goal, metric, targetNumber, funding, leverageLevel, costBearer, teammates } = req.body;
   if (!teamId || !year || !goal || !metric || !targetNumber || !funding || !leverageLevel || !costBearer) {
     return res.status(400).json({ error: 'All fields required' });
   }
@@ -77,7 +77,8 @@ app.post('/api/moonshot', (req, res) => {
     targetNumber: targetNumber.trim(),
     funding: funding.trim(),
     leverageLevel,
-    costBearer: costBearer.trim()
+    costBearer: costBearer.trim(),
+    teammates: (teammates || '').trim()
   };
   saveState();
   res.json({ ok: true });

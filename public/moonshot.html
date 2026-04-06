@@ -24,15 +24,6 @@
   textarea { resize: vertical; min-height: 80px; }
   .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
   .row3 label { margin-top: 0; }
-  .team-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
-  .team-btn {
-    width: 48px; height: 44px; border: 2px solid #ddd; border-radius: 8px;
-    background: white; cursor: pointer; font-size: 1rem; font-weight: 600;
-    transition: all 0.15s;
-  }
-  .team-btn:hover { border-color: #00694E; }
-  .team-btn.selected { border-color: #00694E; background: #00694E; color: white; }
-  .team-btn.taken { background: #eee; color: #aaa; cursor: default; border-color: #ddd; }
   .btn {
     width: 100%; padding: 14px; margin-top: 20px; border: none; border-radius: 8px;
     font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.2s;
@@ -78,8 +69,10 @@
   <div id="form-section">
     <div class="card">
       <h2>Your Team</h2>
-      <label>Select your team number</label>
-      <div class="team-grid" id="team-grid"></div>
+      <label for="team-number">Team Number</label>
+      <input type="text" id="team-number" placeholder="Enter your team number" inputmode="numeric" style="max-width:200px;">
+      <label for="teammates" style="margin-top:14px;">Teammates</label>
+      <input type="text" id="teammates" placeholder="Enter your teammates' names">
     </div>
 
     <div class="card">
@@ -145,42 +138,19 @@
 
 <script>
 (function() {
-  let selectedTeam = null;
   let submitted = false;
   let numTeams = 8;
-  let takenTeams = new Set();
 
-  const fields = ['ms-year', 'ms-goal', 'ms-metric', 'ms-target', 'ms-funding', 'ms-leverage', 'ms-cost'];
+  const fields = ['team-number', 'teammates', 'ms-year', 'ms-goal', 'ms-metric', 'ms-target', 'ms-funding', 'ms-leverage', 'ms-cost'];
 
   function esc(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 
-  // Team grid
-  function buildTeamGrid(n, taken) {
-    const grid = document.getElementById('team-grid');
-    grid.innerHTML = '';
-    for (let i = 1; i <= n; i++) {
-      const btn = document.createElement('button');
-      btn.className = 'team-btn';
-      btn.textContent = i;
-      if (taken.has(i)) {
-        btn.classList.add('taken');
-        btn.title = 'Already submitted';
-      } else {
-        btn.addEventListener('click', () => {
-          grid.querySelectorAll('.team-btn').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          selectedTeam = i;
-          checkReady();
-        });
-      }
-      grid.appendChild(btn);
-    }
-  }
-
   // Validate form
   function checkReady() {
+    const teamNum = parseInt(document.getElementById('team-number').value);
+    const teamValid = !isNaN(teamNum) && teamNum >= 1 && teamNum <= numTeams;
     const allFilled = fields.every(id => document.getElementById(id).value.trim());
-    document.getElementById('btn-submit').disabled = !(selectedTeam && allFilled);
+    document.getElementById('btn-submit').disabled = !(teamValid && allFilled);
   }
 
   fields.forEach(id => {
@@ -205,14 +175,15 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          teamId: selectedTeam,
+          teamId: parseInt(document.getElementById('team-number').value),
           year: document.getElementById('ms-year').value,
           goal: document.getElementById('ms-goal').value.trim(),
           metric: document.getElementById('ms-metric').value.trim(),
           targetNumber: document.getElementById('ms-target').value.trim(),
           funding: document.getElementById('ms-funding').value.trim(),
           leverageLevel: document.getElementById('ms-leverage').value,
-          costBearer: document.getElementById('ms-cost').value.trim()
+          costBearer: document.getElementById('ms-cost').value.trim(),
+          teammates: document.getElementById('teammates').value.trim()
         })
       });
       const data = await res.json();
@@ -263,25 +234,10 @@
       const data = await res.json();
       numTeams = data.numTeams;
 
-      // Track which teams have submitted
-      const newTaken = new Set(Object.keys(data.moonshots).map(Number));
-      if (newTaken.size !== takenTeams.size) {
-        takenTeams = newTaken;
-        if (!submitted) buildTeamGrid(numTeams, takenTeams);
-      }
-
-      // If our selected team was taken by someone else
-      if (selectedTeam && takenTeams.has(selectedTeam) && !submitted) {
-        selectedTeam = null;
-        buildTeamGrid(numTeams, takenTeams);
-        checkReady();
-      }
-
       renderTracker(data.moonshots);
     } catch(e) { /* silent */ }
   }
 
-  buildTeamGrid(numTeams, takenTeams);
   poll();
   setInterval(poll, 3000);
 })();
