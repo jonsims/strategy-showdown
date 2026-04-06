@@ -28,19 +28,26 @@
   /* Main layout */
   .display-body { padding: 30px 40px; }
 
-  /* QR + Join section */
+  /* Phase context line */
+  .phase-context {
+    text-align: center; font-style: italic; color: #555;
+    font-size: 1.15rem; line-height: 1.5;
+    margin-bottom: 24px; padding: 0 40px;
+  }
+
+  /* QR + Join section — smaller */
   .join-section {
-    display: flex; align-items: center; gap: 40px;
-    background: white; border-radius: 16px;
-    padding: 30px; margin-bottom: 30px;
+    display: flex; align-items: center; gap: 24px;
+    background: white; border-radius: 12px;
+    padding: 16px 24px; margin-bottom: 24px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.08);
   }
   .qr-container { flex-shrink: 0; }
-  .qr-container canvas { border-radius: 12px; }
-  .join-info h2 { font-size: 1.8rem; color: #00694E; margin-bottom: 8px; }
-  .join-info .url { font-size: 1.4rem; color: #555; font-family: monospace; word-break: break-all; }
+  .qr-container canvas { border-radius: 8px; }
+  .join-info h2 { font-size: 1.2rem; color: #00694E; margin-bottom: 4px; }
+  .join-info .url { font-size: 1rem; color: #555; font-family: monospace; word-break: break-all; }
   .join-info .counter {
-    margin-top: 12px; font-size: 1.1rem; color: #C5A033; font-weight: 700;
+    margin-top: 6px; font-size: 0.95rem; color: #C5A033; font-weight: 700;
   }
 
   /* Phase containers */
@@ -68,7 +75,7 @@
     display: flex; align-items: center; gap: 8px;
     margin-bottom: 6px; font-size: 0.85rem;
   }
-  .team-bar-label { width: 50px; font-weight: 600; color: #555; flex-shrink: 0; }
+  .team-bar-label { width: 70px; font-weight: 600; color: #555; flex-shrink: 0; display: flex; align-items: center; gap: 4px; }
   .team-bar-track {
     flex: 1; height: 22px; background: #eee; border-radius: 6px;
     overflow: hidden; position: relative;
@@ -77,6 +84,14 @@
     height: 100%; border-radius: 6px;
     transition: width 0.6s ease;
     min-width: 0;
+  }
+
+  /* Split badge */
+  .split-badge {
+    display: inline-block; background: #e74c3c; color: white;
+    font-size: 0.65rem; font-weight: 800; padding: 1px 5px;
+    border-radius: 4px; line-height: 1.3; vertical-align: middle;
+    white-space: nowrap;
   }
 
   /* Team colors */
@@ -138,14 +153,19 @@
   @keyframes slideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: none; } }
   .moonshot-card .team-header {
     display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
   }
   .moonshot-card .team-name { font-size: 1.3rem; font-weight: 800; color: #00694E; }
   .moonshot-card .year-badge {
     background: #C5A033; color: white; padding: 4px 14px;
     border-radius: 20px; font-weight: 700; font-size: 1rem;
   }
-  .moonshot-card .goal { font-size: 1.15rem; line-height: 1.4; margin-bottom: 16px; color: #333; }
+  .moonshot-card .goal { font-size: 1.15rem; line-height: 1.4; margin-bottom: 12px; color: #333; }
+  .moonshot-card .cost-bearer-line {
+    font-size: 0.95rem; color: #d4820a; font-weight: 600;
+    margin-bottom: 14px; padding: 6px 10px;
+    background: rgba(212, 130, 10, 0.08); border-radius: 6px;
+  }
   .moonshot-card .key-number {
     background: #f0f8f5; border: 2px solid #00694E; border-radius: 10px;
     padding: 12px 16px; text-align: center; margin-bottom: 12px;
@@ -157,6 +177,17 @@
     padding-top: 8px; border-top: 1px solid #eee;
   }
   .moonshot-card .funding-line strong { color: #C5A033; }
+
+  /* Leverage badge */
+  .leverage-badge {
+    display: inline-block; color: white; padding: 3px 10px;
+    border-radius: 12px; font-size: 0.78rem; font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .leverage-parameters { background: #7f8c8d; }
+  .leverage-feedbacks { background: #2980b9; }
+  .leverage-design { background: #C5A033; }
+  .leverage-intent { background: #16a085; }
 
   .moonshot-waiting {
     text-align: center; padding: 60px; color: #999;
@@ -173,12 +204,20 @@
     text-align: center;
   }
   .funding-bar-row {
-    display: flex; align-items: center; gap: 16px;
+    display: flex; align-items: center; gap: 12px;
     margin-bottom: 16px; min-height: 50px;
   }
   .funding-bar-team {
     font-weight: 800; font-size: 1.1rem; color: #333;
     min-width: 80px; text-align: right;
+  }
+  .funding-bar-meta {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    min-width: 130px; flex-shrink: 0;
+  }
+  .funding-bar-cost {
+    font-size: 0.7rem; color: #d4820a; font-weight: 600;
+    max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .funding-bar-track {
     flex: 1; height: 44px; background: #eee;
@@ -223,6 +262,20 @@
   .done-section h2 { font-size: 2.5rem; color: #00694E; margin-bottom: 12px; }
   .done-section p { font-size: 1.2rem; color: #777; }
 
+  .discussion-prompt {
+    margin-top: 36px; padding: 28px 36px;
+    background: #f0f8f5; border: 2px solid #00694E;
+    border-radius: 14px; text-align: left;
+  }
+  .discussion-prompt h4 {
+    font-size: 1.1rem; color: #00694E; margin-bottom: 10px;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .discussion-prompt p {
+    font-size: 1.15rem; line-height: 1.6; color: #333;
+    font-style: italic;
+  }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -234,11 +287,14 @@
 </div>
 
 <div class="display-body">
-  <!-- QR Join -->
+  <!-- Phase context line -->
+  <div class="phase-context" id="phase-context"></div>
+
+  <!-- QR Join (smaller) -->
   <div class="join-section" id="join-section">
     <div class="qr-container"><canvas id="qr-canvas"></canvas></div>
     <div class="join-info">
-      <h2>Scan to Join</h2>
+      <h2>Join</h2>
       <div class="url" id="join-url"></div>
       <div class="counter" id="join-counter">0 students joined</div>
     </div>
@@ -289,6 +345,10 @@
       <h3>Final Funding Rankings</h3>
       <div id="final-rankings"></div>
     </div>
+    <div class="discussion-prompt">
+      <h4>Discussion</h4>
+      <p>How do these proposals compare to what Microsoft actually did? Which leverage level did the class favor &mdash; and is it deep enough to bend the curve?</p>
+    </div>
   </div>
 </div>
 
@@ -305,16 +365,37 @@
     'Change the Fuel': '#C5A033',
     'Tune the Engine': '#2980b9'
   };
+  const leverageColors = {
+    'Parameters': '#7f8c8d',
+    'Feedbacks': '#2980b9',
+    'Design': '#C5A033',
+    'Intent': '#16a085'
+  };
+  const leverageClasses = {
+    'Parameters': 'leverage-parameters',
+    'Feedbacks': 'leverage-feedbacks',
+    'Design': 'leverage-design',
+    'Intent': 'leverage-intent'
+  };
+
+  const phaseContextText = {
+    1: 'Microsoft has $245B in revenue, 300+ data centers, and a 2030 deadline. Where should they place their biggest bet?',
+    2: "Kennedy said \u201Cmoon by end of decade.\u201D What\u2019s Microsoft\u2019s equivalent? Specific. Measurable. Audacious.",
+    3: "You\u2019re the investors. Which proposal is ambitious AND feasible? Put your money where your mouth is."
+  };
 
   let currentPhase = 0;
   let prevFeedLen = 0;
   let phase1Revealed = false;
+  // Store raw phase1 data for split detection
+  let phase1Data = [];
+  let numTeamsCache = 8;
 
-  // Generate QR code
+  // Generate QR code — smaller
   const baseUrl = window.location.origin;
   document.getElementById('join-url').textContent = baseUrl;
   QRCode.toCanvas(document.getElementById('qr-canvas'), baseUrl, {
-    width: 180, margin: 2,
+    width: 120, margin: 2,
     color: { dark: '#00694E', light: '#ffffff' }
   });
 
@@ -334,22 +415,47 @@
     else if (phase >= 4) document.getElementById('phase-done').classList.add('active');
     document.getElementById('phase-label').textContent = phaseLabels[phase] || 'Phase ' + phase;
 
+    // Update phase context
+    const ctxEl = document.getElementById('phase-context');
+    if (phaseContextText[phase]) {
+      ctxEl.textContent = phaseContextText[phase];
+      ctxEl.style.display = '';
+    } else {
+      ctxEl.style.display = 'none';
+    }
+
     // Hide QR once done
     if (phase >= 4) document.getElementById('join-section').style.display = 'none';
+  }
+
+  // Detect split teams: returns Set of team numbers where members picked different strategies
+  function getSplitTeams(numTeams) {
+    const teamVotes = {};
+    for (let t = 1; t <= numTeams; t++) teamVotes[t] = new Set();
+    phase1Data.forEach(s => {
+      if (teamVotes[s.team]) teamVotes[s.team].add(s.strategy);
+    });
+    const splits = new Set();
+    for (let t = 1; t <= numTeams; t++) {
+      if (teamVotes[t].size > 1) splits.add(t);
+    }
+    return splits;
   }
 
   function buildStrategyGrid(numTeams) {
     const grid = document.getElementById('strategy-grid');
     grid.innerHTML = '';
+    const splitTeams = getSplitTeams(numTeams);
     strategies.forEach(s => {
       const col = document.createElement('div');
       col.className = 'strategy-col';
       col.dataset.strategy = s;
       let barsHTML = '';
       for (let t = 1; t <= numTeams; t++) {
+        const splitHTML = splitTeams.has(t) ? ' <span class="split-badge">\u26A1 SPLIT</span>' : '';
         barsHTML += `
           <div class="team-bar-row">
-            <div class="team-bar-label">T${t}</div>
+            <div class="team-bar-label">T${t}${splitHTML}</div>
             <div class="team-bar-track">
               <div class="team-bar-fill team-color-${(t - 1) % 12 + 1}" id="bar-${s.replace(/\s/g,'')}-${t}" style="width:0"></div>
             </div>
@@ -383,11 +489,16 @@
     }
 
     // Once threshold reached, reveal and lock
-    if (!phase1Revealed) phase1Revealed = true;
+    if (!phase1Revealed) {
+      phase1Revealed = true;
+      // Rebuild grid now that we have phase1Data for split detection
+      buildStrategyGrid(data.numTeams);
+    }
     document.getElementById('p1-waiting-overlay').classList.add('hidden');
     document.getElementById('p1-results').classList.remove('hidden');
 
     // Strategy totals and bars
+    const splitTeams = getSplitTeams(data.numTeams);
     strategies.forEach(s => {
       let total = 0;
       let maxPerTeam = 0;
@@ -427,6 +538,12 @@
     }
   }
 
+  function getLeverageBadgeHTML(level) {
+    if (!level) return '';
+    const cls = leverageClasses[level] || 'leverage-parameters';
+    return `<span class="leverage-badge ${cls}">${esc(level)}</span>`;
+  }
+
   function updatePhase2(data) {
     const grid = document.getElementById('moonshot-grid');
     const moonshots = Object.values(data.moonshots);
@@ -434,20 +551,27 @@
       grid.innerHTML = '<div class="moonshot-waiting">Waiting for team moonshots...</div>';
       return;
     }
-    grid.innerHTML = moonshots.map(m =>
-      `<div class="moonshot-card" style="border-left-color: var(--team-${m.teamId}-color, #00694E);">
+    grid.innerHTML = moonshots.map(m => {
+      const costBearerHTML = m.costBearer
+        ? `<div class="cost-bearer-line">Who bears the cost? ${esc(m.costBearer)}</div>`
+        : '';
+      return `<div class="moonshot-card" style="border-left-color: var(--team-${m.teamId}-color, #00694E);">
         <div class="team-header">
           <div class="team-name">Team ${m.teamId}</div>
-          <div class="year-badge">${m.year}</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${getLeverageBadgeHTML(m.leverageLevel)}
+            <div class="year-badge">${m.year}</div>
+          </div>
         </div>
         <div class="goal">${esc(m.goal)}</div>
+        ${costBearerHTML}
         <div class="key-number">
           <div class="value">${esc(m.targetNumber)}</div>
           <div class="metric-label">${esc(m.metric)}</div>
         </div>
         <div class="funding-line"><strong>Funding:</strong> ${esc(m.funding)}</div>
-      </div>`
-    ).join('');
+      </div>`;
+    }).join('');
   }
 
   function updatePhase3(data) {
@@ -462,9 +586,14 @@
       const ms = moonshots[tid];
       const pts = data.fundingTotals[tid] || 0;
       const pct = (pts / maxFunding) * 100;
+      const costShort = ms.costBearer ? ms.costBearer.substring(0, 30) : '';
       return `
         <div class="funding-bar-row">
           <div class="funding-bar-team">Team ${tid}</div>
+          <div class="funding-bar-meta">
+            ${getLeverageBadgeHTML(ms.leverageLevel)}
+            ${costShort ? `<span class="funding-bar-cost">${esc(costShort)}</span>` : ''}
+          </div>
           <div class="funding-bar-track">
             <div class="funding-bar-fill" style="width: ${pct}%">
               ${pts > 0 ? `<span class="funding-bar-value">${pts} pts</span>` : ''}
@@ -500,6 +629,9 @@
         <div class="funding-bar-row">
           <div class="ranking-badge ${rankClass}">${rank}</div>
           <div class="funding-bar-team">Team ${item.tid}</div>
+          <div class="funding-bar-meta">
+            ${getLeverageBadgeHTML(item.moonshot.leverageLevel)}
+          </div>
           <div class="funding-bar-track">
             <div class="funding-bar-fill" style="width: ${pct}%; background: ${rank === 1 ? '#C5A033' : rank === 2 ? '#888' : rank === 3 ? '#cd7f32' : '#00694E'}">
               ${item.pts > 0 ? `<span class="funding-bar-value">${item.pts} pts</span>` : ''}
@@ -518,6 +650,10 @@
 
       // Update join counter
       document.getElementById('join-counter').textContent = data.studentCount + ' student' + (data.studentCount !== 1 ? 's' : '') + ' joined';
+
+      // Store phase1 data for split detection (numbersFeed has per-student data)
+      phase1Data = data.numbersFeed.map(f => ({ team: f.team, strategy: f.strategy }));
+      numTeamsCache = data.numTeams;
 
       // Build strategy grid if phase changed or first load
       if (data.phase !== currentPhase || currentPhase === 0) {

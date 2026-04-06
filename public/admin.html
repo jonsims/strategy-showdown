@@ -65,6 +65,14 @@
   .phase-step.active { background: #00694E; color: white; }
   .phase-step.completed { background: #C5A033; color: white; }
 
+  /* Phase transition guidance */
+  .phase-guidance {
+    background: #fffbf0; border: 1px solid #C5A033; border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 16px; font-size: 0.88rem;
+    color: #7a5f00; line-height: 1.5;
+  }
+  .phase-guidance strong { color: #C5A033; }
+
   /* Stats */
   .stats-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
   .stat-box {
@@ -86,6 +94,29 @@
   th { text-align: left; padding: 8px; border-bottom: 2px solid #ddd; color: #555; font-size: 0.78rem; text-transform: uppercase; }
   td { padding: 8px; border-bottom: 1px solid #eee; }
   tr:hover td { background: #f8f8f8; }
+
+  /* Split team flag */
+  .split-flag {
+    display: inline-block; background: #e74c3c; color: white;
+    font-size: 0.72rem; font-weight: 700; padding: 2px 6px;
+    border-radius: 4px; margin-left: 6px;
+  }
+
+  /* Leverage badge (admin) */
+  .leverage-badge-sm {
+    display: inline-block; color: white; padding: 2px 7px;
+    border-radius: 8px; font-size: 0.72rem; font-weight: 700;
+  }
+  .lv-parameters { background: #7f8c8d; }
+  .lv-feedbacks { background: #2980b9; }
+  .lv-design { background: #C5A033; }
+  .lv-intent { background: #16a085; }
+
+  /* Self-funding violation note */
+  .violation-note {
+    background: #fef0f0; border: 1px solid #e74c3c; border-radius: 8px;
+    padding: 10px 14px; margin-top: 12px; font-size: 0.82rem; color: #c0392b;
+  }
 
   .hidden { display: none; }
 
@@ -117,6 +148,9 @@
     <div class="phase-step" id="pi-3">3. Fund It</div>
     <div class="phase-step" id="pi-4">Done</div>
   </div>
+
+  <!-- Phase transition guidance -->
+  <div class="phase-guidance" id="phase-guidance"></div>
 
   <!-- Controls -->
   <div class="card">
@@ -154,6 +188,7 @@
 
   <div class="card" id="section-p1">
     <h2>Phase 1 Submissions</h2>
+    <div id="split-teams-summary"></div>
     <table>
       <thead><tr><th>Name</th><th>Team</th><th>Strategy</th><th>Energy</th><th>Cost</th><th>Impact</th></tr></thead>
       <tbody id="tbl-p1"></tbody>
@@ -163,13 +198,14 @@
   <div class="card" id="section-moonshots">
     <h2>Moonshot Submissions</h2>
     <table>
-      <thead><tr><th>Team</th><th>Year</th><th>Goal</th><th>Metric</th><th>Target</th><th>Funding</th></tr></thead>
+      <thead><tr><th>Team</th><th>Year</th><th>Goal</th><th>Leverage</th><th>Cost Bearer</th><th>Metric</th><th>Target</th><th>Funding</th></tr></thead>
       <tbody id="tbl-moonshots"></tbody>
     </table>
   </div>
 
   <div class="card" id="section-funding">
     <h2>Funding Votes</h2>
+    <div id="self-funding-violations"></div>
     <table>
       <thead><tr><th>Student</th><th>Allocations</th></tr></thead>
       <tbody id="tbl-funding"></tbody>
@@ -263,6 +299,45 @@
     'Tune the Engine': '\u{1F527}'
   };
 
+  const leverageClassMap = {
+    'Parameters': 'lv-parameters',
+    'Feedbacks': 'lv-feedbacks',
+    'Design': 'lv-design',
+    'Intent': 'lv-intent'
+  };
+
+  const phaseGuidanceText = {
+    1: '<strong>Phase 1 in progress.</strong> Students are placing their bets. When ready, advance to Phase 2.',
+    2: '<strong>Phase 1 complete.</strong> Students have placed their bets. Transition to the leverage points discussion (Segment 3) before advancing to Phase 2. Teams will then submit moonshots.',
+    3: '<strong>Teams have submitted moonshots.</strong> Do the 45-second pitches before opening funding. When ready, advance to Phase 3.',
+    4: '<strong>Funding complete.</strong> Advance to reveal final rankings.'
+  };
+
+  // Detect split teams from phase1 data
+  function detectSplitTeams(phase1, numTeams) {
+    const teamVotes = {};
+    for (let t = 1; t <= numTeams; t++) teamVotes[t] = {};
+    phase1.forEach(s => {
+      if (!teamVotes[s.team]) teamVotes[s.team] = {};
+      teamVotes[s.team][s.strategy] = (teamVotes[s.team][s.strategy] || 0) + 1;
+    });
+    const splits = [];
+    for (let t = 1; t <= numTeams; t++) {
+      const strats = Object.keys(teamVotes[t]).filter(k => teamVotes[t][k] > 0);
+      if (strats.length > 1) {
+        const breakdown = strats.map(s => teamVotes[t][s] + ' ' + s).join(', ');
+        splits.push({ team: t, breakdown });
+      }
+    }
+    return splits;
+  }
+
+  function getLeverageBadge(level) {
+    if (!level) return '';
+    const cls = leverageClassMap[level] || 'lv-parameters';
+    return `<span class="leverage-badge-sm ${cls}">${esc(level)}</span>`;
+  }
+
   async function poll() {
     if (!authenticated) return;
     try {
@@ -278,6 +353,22 @@
         el.className = 'phase-step';
         if (i === data.phase) el.classList.add('active');
         else if (i < data.phase) el.classList.add('completed');
+      }
+
+      // Phase guidance
+      const guidanceEl = document.getElementById('phase-guidance');
+      // Show guidance for the *next* transition based on current phase
+      let guidanceKey = data.phase;
+      // At phase 1, show the phase-2 transition hint once bets are in
+      if (data.phase === 1 && data.phase1.length > 0) guidanceKey = 2;
+      else if (data.phase === 2 && Object.keys(data.moonshots).length > 0) guidanceKey = 3;
+      else if (data.phase === 3 && data.funding.length > 0) guidanceKey = 4;
+
+      if (phaseGuidanceText[guidanceKey]) {
+        guidanceEl.innerHTML = phaseGuidanceText[guidanceKey];
+        guidanceEl.style.display = '';
+      } else {
+        guidanceEl.style.display = 'none';
       }
 
       // Disable advance if done
@@ -298,32 +389,71 @@
         `<tr><td>${esc(s.name)}</td><td>Team ${s.team}</td><td>${s.id}</td></tr>`
       ).join('');
 
-      // Phase 1 table
-      const tblP1 = document.getElementById('tbl-p1');
-      tblP1.innerHTML = data.phase1.map(s =>
-        `<tr><td>${esc(s.name)}</td><td>${s.team}</td>` +
-        `<td><span class="emoji-label">${strategyEmoji[s.strategy] || ''} ${esc(s.strategy)}</span></td>` +
-        `<td>${esc(s.energyNumber)}</td><td>${esc(s.costNumber)}</td><td>${esc(s.impactNumber)}</td></tr>`
-      ).join('');
+      // Phase 1 table with split detection
+      const splitTeams = detectSplitTeams(data.phase1, data.numTeams);
+      const splitSummaryEl = document.getElementById('split-teams-summary');
+      if (splitTeams.length > 0) {
+        splitSummaryEl.innerHTML = '<div style="background:#fef0f0;border:1px solid #e74c3c;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:0.85rem;">' +
+          '<strong style="color:#e74c3c;">Split Teams (cold-call targets):</strong><br>' +
+          splitTeams.map(s =>
+            `Team ${s.team}: <span class="split-flag">SPLIT</span> (${esc(s.breakdown)})`
+          ).join('<br>') +
+          '</div>';
+      } else {
+        splitSummaryEl.innerHTML = '';
+      }
 
-      // Moonshots table
+      // Build a set of split team numbers for row highlighting
+      const splitTeamNums = new Set(splitTeams.map(s => s.team));
+
+      const tblP1 = document.getElementById('tbl-p1');
+      tblP1.innerHTML = data.phase1.map(s => {
+        const splitTag = splitTeamNums.has(s.team) ? ' <span class="split-flag">SPLIT</span>' : '';
+        return `<tr><td>${esc(s.name)}</td><td>Team ${s.team}${splitTag}</td>` +
+          `<td><span class="emoji-label">${strategyEmoji[s.strategy] || ''} ${esc(s.strategy)}</span></td>` +
+          `<td>${esc(s.energyNumber)}</td><td>${esc(s.costNumber)}</td><td>${esc(s.impactNumber)}</td></tr>`;
+      }).join('');
+
+      // Moonshots table with leverage level and cost bearer
       const tblM = document.getElementById('tbl-moonshots');
       tblM.innerHTML = Object.values(data.moonshots).map(m =>
         `<tr><td>Team ${m.teamId}</td><td>${m.year}</td>` +
-        `<td>${esc(m.goal)}</td><td>${esc(m.metric)}</td>` +
+        `<td>${esc(m.goal)}</td>` +
+        `<td>${getLeverageBadge(m.leverageLevel)}</td>` +
+        `<td style="color:#d4820a;font-size:0.82rem;">${esc(m.costBearer || '')}</td>` +
+        `<td>${esc(m.metric)}</td>` +
         `<td>${esc(m.targetNumber)}</td><td>${esc(m.funding)}</td></tr>`
       ).join('');
 
-      // Funding table
+      // Funding table + self-funding cap violation notes
+      const violationsEl = document.getElementById('self-funding-violations');
+      const violations = [];
       const tblF = document.getElementById('tbl-funding');
       tblF.innerHTML = data.funding.map(f => {
         const student = data.students.find(s => s.id === f.studentId);
+        const studentTeam = student ? String(student.team) : null;
         const allocs = Object.entries(f.allocations)
           .filter(([, v]) => v > 0)
-          .map(([t, v]) => `Team ${t}: ${v}`)
+          .map(([t, v]) => {
+            // Flag if self-funding exceeded (server blocks >25, but note attempted)
+            if (t === studentTeam && v > 25) {
+              violations.push({ name: student ? student.name : f.studentId, team: t, amount: v });
+            }
+            return `Team ${t}: ${v}`;
+          })
           .join(', ');
         return `<tr><td>${esc(student ? student.name : f.studentId)}</td><td>${allocs}</td></tr>`;
       }).join('');
+
+      if (violations.length > 0) {
+        violationsEl.innerHTML = '<div class="violation-note">' +
+          '<strong>Self-funding cap violations detected:</strong> ' +
+          violations.map(v => `${esc(v.name)} (Team ${v.team}) tried ${v.amount} pts`).join('; ') +
+          '. The server blocks allocations over 25 pts to own team, but students may report confusion.' +
+          '</div>';
+      } else {
+        violationsEl.innerHTML = '';
+      }
 
     } catch(e) { /* silent */ }
   }
