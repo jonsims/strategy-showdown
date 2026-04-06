@@ -319,9 +319,9 @@
 
   const phaseGuidanceText = {
     1: '<strong>Phase 1 in progress.</strong> Students are placing their bets. When ready, advance to Phase 2.',
-    2: '<strong>Phase 1 complete.</strong> Students have placed their bets. Transition to the leverage points discussion (Segment 3) before advancing to Phase 2. Teams will then submit moonshots.',
-    3: '<strong>Teams have submitted moonshots.</strong> Do the 45-second pitches before opening funding. When ready, advance to Phase 3.',
-    4: '<strong>Funding complete.</strong> Advance to reveal final rankings.'
+    2: '<strong>Phase 2 in progress.</strong> Teams are submitting moonshots. Do the leverage points discussion, then advance to Phase 3.',
+    3: '<strong>Phase 3 in progress.</strong> Students are allocating funding. When voting is complete, advance to reveal final rankings.',
+    4: '<strong>Session complete.</strong> Final funding rankings are shown on the display.'
   };
 
   // Detect split teams from phase1 data
@@ -368,15 +368,8 @@
 
       // Phase guidance
       const guidanceEl = document.getElementById('phase-guidance');
-      // Show guidance for the *next* transition based on current phase
-      let guidanceKey = data.phase;
-      // At phase 1, show the phase-2 transition hint once bets are in
-      if (data.phase === 1 && data.phase1.length > 0) guidanceKey = 2;
-      else if (data.phase === 2 && Object.keys(data.moonshots).length > 0) guidanceKey = 3;
-      else if (data.phase === 3 && data.funding.length > 0) guidanceKey = 4;
-
-      if (phaseGuidanceText[guidanceKey]) {
-        guidanceEl.innerHTML = phaseGuidanceText[guidanceKey];
+      if (phaseGuidanceText[data.phase]) {
+        guidanceEl.innerHTML = phaseGuidanceText[data.phase];
         guidanceEl.style.display = '';
       } else {
         guidanceEl.style.display = 'none';
@@ -393,6 +386,12 @@
       document.getElementById('stat-p1').textContent = data.phase1.length;
       document.getElementById('stat-moonshots').textContent = Object.keys(data.moonshots).length;
       document.getElementById('stat-votes').textContent = data.funding.length;
+
+      // Show/hide sections based on phase
+      document.getElementById('section-students').style.display = '';
+      document.getElementById('section-p1').style.display = data.phase >= 1 ? '' : 'none';
+      document.getElementById('section-moonshots').style.display = data.phase >= 2 ? '' : 'none';
+      document.getElementById('section-funding').style.display = data.phase >= 3 ? '' : 'none';
 
       // Students table
       const tblS = document.getElementById('tbl-students');
