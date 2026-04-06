@@ -9,7 +9,7 @@ const ADMIN_PIN = '2030';
 const STATE_FILE = path.join(__dirname, 'state.json');
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: 0, etag: false }));
 
 // ── In-memory state ─────────────────────────────────────────────────────────
 

@@ -672,7 +672,7 @@
       else if (data.phase === 3) updatePhase3(data);
       else if (data.phase >= 4) updateDone(data);
 
-    } catch(e) { /* silent for flaky wifi */ }
+    } catch(e) { console.error('Poll error:', e); }
   }
 
   poll();
