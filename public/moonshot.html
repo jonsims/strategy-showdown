@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moonshot Moment - Strategy Showdown</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F0F0F0; color: #333; line-height: 1.5; }
+  header { background: #00694E; color: white; padding: 16px 24px; text-align: center; }
+  header h1 { font-size: 1.3rem; font-weight: 700; }
+  header p { font-size: 0.85rem; opacity: 0.85; margin-top: 2px; }
+  .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+  .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .card h2 { font-size: 1.05rem; color: #00694E; margin-bottom: 14px; }
+  label { display: block; font-size: 0.82rem; font-weight: 600; color: #555; margin-bottom: 4px; margin-top: 14px; }
+  label:first-child { margin-top: 0; }
+  input[type="text"], textarea, select {
+    width: 100%; padding: 10px 12px; font-size: 0.95rem;
+    border: 2px solid #ddd; border-radius: 8px; background: #fafafa;
+    font-family: inherit; transition: border-color 0.2s;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: #00694E; background: white; }
+  textarea { resize: vertical; min-height: 80px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .row3 label { margin-top: 0; }
+  .team-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .team-btn {
+    width: 48px; height: 44px; border: 2px solid #ddd; border-radius: 8px;
+    background: white; cursor: pointer; font-size: 1rem; font-weight: 600;
+    transition: all 0.15s;
+  }
+  .team-btn:hover { border-color: #00694E; }
+  .team-btn.selected { border-color: #00694E; background: #00694E; color: white; }
+  .team-btn.taken { background: #eee; color: #aaa; cursor: default; border-color: #ddd; }
+  .btn {
+    width: 100%; padding: 14px; margin-top: 20px; border: none; border-radius: 8px;
+    font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.2s;
+    background: #00694E; color: white;
+  }
+  .btn:hover { background: #005540; }
+  .btn:disabled { background: #aaa; cursor: not-allowed; }
+  .success { text-align: center; padding: 30px 20px; color: #00694E; }
+  .success .icon { font-size: 2.5rem; margin-bottom: 10px; }
+  .tracker-card {
+    background: #fafafa; border-radius: 10px; border: 1px solid #eee;
+    padding: 14px 16px; margin-bottom: 10px;
+  }
+  .tracker-card .team { font-weight: 700; color: #00694E; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+  .tracker-card .goal { font-size: 0.88rem; color: #444; line-height: 1.4; }
+  .tracker-card .meta { font-size: 0.78rem; color: #888; margin-top: 6px; }
+  .leverage-badge {
+    display: inline-block; color: white; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.72rem; font-weight: 700;
+  }
+  .lv-Parameters { background: #7f8c8d; }
+  .lv-Feedbacks { background: #2980b9; }
+  .lv-Design { background: #C5A033; }
+  .lv-Intent { background: #16a085; }
+  .cost-line { font-size: 0.8rem; color: #c0392b; font-weight: 600; margin-top: 4px; }
+  .char-count { font-size: 0.75rem; color: #999; text-align: right; margin-top: 2px; }
+  .hidden { display: none !important; }
+  .error-msg { background: #fef0f0; border: 1px solid #e74c3c; border-radius: 8px; padding: 10px 14px; color: #c0392b; font-size: 0.85rem; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Moonshot Moment</h1>
+  <p>Microsoft Sustainability Case &mdash; Strategy Showdown</p>
+</header>
+
+<div class="container">
+  <!-- Error banner -->
+  <div id="error-banner" class="error-msg hidden"></div>
+
+  <!-- FORM -->
+  <div id="form-section">
+    <div class="card">
+      <h2>Your Team</h2>
+      <label>Select your team number</label>
+      <div class="team-grid" id="team-grid"></div>
+    </div>
+
+    <div class="card">
+      <h2>Your Team's Moonshot</h2>
+      <p style="font-size:0.85rem;color:#666;margin-bottom:14px;">One submission per team. Be specific, measurable, and bold.</p>
+
+      <div class="row3">
+        <div>
+          <label for="ms-year">Target Year</label>
+          <select id="ms-year">
+            <option value="">Year...</option>
+            <option>2027</option><option>2028</option><option>2029</option><option>2030</option><option>2035</option>
+          </select>
+        </div>
+        <div>
+          <label for="ms-metric">Key Metric</label>
+          <input type="text" id="ms-metric" placeholder='e.g. "PUE 1.10"'>
+        </div>
+        <div>
+          <label for="ms-target">Target Number</label>
+          <input type="text" id="ms-target" placeholder='e.g. "zero freshwater"'>
+        </div>
+      </div>
+
+      <label for="ms-goal">Goal Statement <span style="font-weight:400;color:#999;">(280 chars max)</span></label>
+      <textarea id="ms-goal" maxlength="280" placeholder="Your team's moonshot goal..."></textarea>
+      <div class="char-count"><span id="char-count">0</span>/280</div>
+
+      <label for="ms-funding">Funding Mechanism</label>
+      <input type="text" id="ms-funding" placeholder='e.g. "15% of Azure revenue growth"'>
+
+      <label for="ms-leverage">Leverage Level (Fischer &amp; Riechers)</label>
+      <select id="ms-leverage">
+        <option value="">Select level...</option>
+        <option value="Parameters">Parameters &mdash; adjusting numbers within existing system</option>
+        <option value="Feedbacks">Feedbacks &mdash; changing monitoring, delays, loops</option>
+        <option value="Design">Design &mdash; changing rules, incentives, self-organization</option>
+        <option value="Intent">Intent &mdash; changing what the system is FOR</option>
+      </select>
+
+      <label for="ms-cost">Who bears the ecological/community cost?</label>
+      <input type="text" id="ms-cost" placeholder='e.g. "Host communities lose water access"'>
+
+      <button class="btn" id="btn-submit" disabled>Submit Moonshot</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="success-section" class="card hidden">
+    <div class="success">
+      <div class="icon">&#x1F680;</div>
+      <h2>Moonshot Launched!</h2>
+      <p style="color:#666;">Your team's proposal is on the board.</p>
+    </div>
+  </div>
+
+  <!-- LIVE TRACKER -->
+  <div class="card">
+    <h2>&#x1F4E1; Live Moonshot Tracker <span id="tracker-count" style="font-weight:400;color:#999;font-size:0.85rem;"></span></h2>
+    <div id="tracker"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  let selectedTeam = null;
+  let submitted = false;
+  let numTeams = 8;
+  let takenTeams = new Set();
+
+  const fields = ['ms-year', 'ms-goal', 'ms-metric', 'ms-target', 'ms-funding', 'ms-leverage', 'ms-cost'];
+
+  function esc(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+  // Team grid
+  function buildTeamGrid(n, taken) {
+    const grid = document.getElementById('team-grid');
+    grid.innerHTML = '';
+    for (let i = 1; i <= n; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'team-btn';
+      btn.textContent = i;
+      if (taken.has(i)) {
+        btn.classList.add('taken');
+        btn.title = 'Already submitted';
+      } else {
+        btn.addEventListener('click', () => {
+          grid.querySelectorAll('.team-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedTeam = i;
+          checkReady();
+        });
+      }
+      grid.appendChild(btn);
+    }
+  }
+
+  // Validate form
+  function checkReady() {
+    const allFilled = fields.every(id => document.getElementById(id).value.trim());
+    document.getElementById('btn-submit').disabled = !(selectedTeam && allFilled);
+  }
+
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', checkReady);
+    el.addEventListener('change', checkReady);
+  });
+
+  // Char counter
+  document.getElementById('ms-goal').addEventListener('input', function() {
+    document.getElementById('char-count').textContent = this.value.length;
+  });
+
+  // Submit
+  document.getElementById('btn-submit').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-submit');
+    const errBanner = document.getElementById('error-banner');
+    errBanner.classList.add('hidden');
+    btn.disabled = true; btn.textContent = 'Submitting...';
+    try {
+      const res = await fetch('/api/moonshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          teamId: selectedTeam,
+          year: document.getElementById('ms-year').value,
+          goal: document.getElementById('ms-goal').value.trim(),
+          metric: document.getElementById('ms-metric').value.trim(),
+          targetNumber: document.getElementById('ms-target').value.trim(),
+          funding: document.getElementById('ms-funding').value.trim(),
+          leverageLevel: document.getElementById('ms-leverage').value,
+          costBearer: document.getElementById('ms-cost').value.trim()
+        })
+      });
+      const data = await res.json();
+      if (data.error) {
+        errBanner.textContent = data.error;
+        errBanner.classList.remove('hidden');
+        btn.disabled = false; btn.textContent = 'Submit Moonshot';
+        return;
+      }
+      submitted = true;
+      document.getElementById('form-section').classList.add('hidden');
+      document.getElementById('success-section').classList.remove('hidden');
+    } catch(e) {
+      errBanner.textContent = 'Connection error. Try again.';
+      errBanner.classList.remove('hidden');
+      btn.disabled = false; btn.textContent = 'Submit Moonshot';
+    }
+  });
+
+  // Tracker
+  function renderTracker(moonshots) {
+    const tracker = document.getElementById('tracker');
+    const teamIds = Object.keys(moonshots).map(Number).sort((a, b) => a - b);
+    document.getElementById('tracker-count').textContent = `(${teamIds.length} of ${numTeams} teams)`;
+
+    if (teamIds.length === 0) {
+      tracker.innerHTML = '<p style="color:#bbb;text-align:center;padding:16px;">Waiting for team submissions...</p>';
+      return;
+    }
+    tracker.innerHTML = teamIds.map(tid => {
+      const ms = moonshots[tid];
+      return `<div class="tracker-card">
+        <div class="team">
+          <span>Team ${tid} &mdash; ${esc(ms.year)}</span>
+          <span class="leverage-badge lv-${esc(ms.leverageLevel)}">${esc(ms.leverageLevel)}</span>
+        </div>
+        <div class="goal">${esc(ms.goal)}</div>
+        <div class="cost-line">Cost bearer: ${esc(ms.costBearer)}</div>
+        <div class="meta">${esc(ms.metric)}: ${esc(ms.targetNumber)} &middot; Funding: ${esc(ms.funding)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Poll
+  async function poll() {
+    try {
+      const res = await fetch('/api/state');
+      const data = await res.json();
+      numTeams = data.numTeams;
+
+      // Track which teams have submitted
+      const newTaken = new Set(Object.keys(data.moonshots).map(Number));
+      if (newTaken.size !== takenTeams.size) {
+        takenTeams = newTaken;
+        if (!submitted) buildTeamGrid(numTeams, takenTeams);
+      }
+
+      // If our selected team was taken by someone else
+      if (selectedTeam && takenTeams.has(selectedTeam) && !submitted) {
+        selectedTeam = null;
+        buildTeamGrid(numTeams, takenTeams);
+        checkReady();
+      }
+
+      renderTracker(data.moonshots);
+    } catch(e) { /* silent */ }
+  }
+
+  buildTeamGrid(numTeams, takenTeams);
+  poll();
+  setInterval(poll, 3000);
+})();
+</script>
+</body>
+</html>
