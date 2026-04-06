@@ -250,10 +250,20 @@
       <div class="big-num" id="p1-count">0</div>
       <div class="label">bets placed</div>
     </div>
-    <div class="strategy-grid" id="strategy-grid"></div>
-    <div class="numbers-feed" id="numbers-feed">
-      <h3>Numbers Cited</h3>
-      <div id="feed-items"></div>
+    <!-- Waiting overlay shown until 75% threshold -->
+    <div id="p1-waiting-overlay" style="text-align:center;padding:60px 20px;">
+      <div style="font-size:2rem;font-weight:800;color:#00694E;margin-bottom:16px;">Submitting...</div>
+      <div style="font-size:1.3rem;color:#555;margin-bottom:24px;" id="p1-waiting-text">0 of 0 bets placed</div>
+      <div style="max-width:500px;margin:0 auto;height:28px;background:#eee;border-radius:14px;overflow:hidden;">
+        <div id="p1-progress-bar" style="height:100%;background:#00694E;border-radius:14px;transition:width 0.6s ease;width:0;"></div>
+      </div>
+    </div>
+    <div id="p1-results" class="hidden">
+      <div class="strategy-grid" id="strategy-grid"></div>
+      <div class="numbers-feed" id="numbers-feed">
+        <h3>Numbers Cited</h3>
+        <div id="feed-items"></div>
+      </div>
     </div>
   </div>
 
@@ -298,6 +308,7 @@
 
   let currentPhase = 0;
   let prevFeedLen = 0;
+  let phase1Revealed = false;
 
   // Generate QR code
   const baseUrl = window.location.origin;
@@ -356,6 +367,25 @@
 
   function updatePhase1(data) {
     document.getElementById('p1-count').textContent = data.phase1Count;
+
+    const threshold = data.studentCount * 0.75;
+    const belowThreshold = data.phase1Count < threshold && data.studentCount > 0;
+
+    if (!phase1Revealed && belowThreshold) {
+      // Show waiting overlay with progress
+      document.getElementById('p1-waiting-overlay').classList.remove('hidden');
+      document.getElementById('p1-results').classList.add('hidden');
+      document.getElementById('p1-waiting-text').textContent =
+        data.phase1Count + ' of ' + data.studentCount + ' bets placed';
+      const pct = data.studentCount > 0 ? (data.phase1Count / data.studentCount) * 100 : 0;
+      document.getElementById('p1-progress-bar').style.width = pct + '%';
+      return;
+    }
+
+    // Once threshold reached, reveal and lock
+    if (!phase1Revealed) phase1Revealed = true;
+    document.getElementById('p1-waiting-overlay').classList.add('hidden');
+    document.getElementById('p1-results').classList.remove('hidden');
 
     // Strategy totals and bars
     strategies.forEach(s => {
@@ -492,6 +522,10 @@
       // Build strategy grid if phase changed or first load
       if (data.phase !== currentPhase || currentPhase === 0) {
         buildStrategyGrid(data.numTeams);
+        // Reset phase1Revealed on reset (phase goes back to 1)
+        if (data.phase === 1 && currentPhase !== 0) {
+          phase1Revealed = false;
+        }
         currentPhase = data.phase;
         prevFeedLen = 0;
         showPhase(currentPhase);

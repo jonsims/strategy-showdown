@@ -212,12 +212,28 @@
   // Controls
   document.getElementById('btn-advance').addEventListener('click', async () => {
     if (!confirm('Advance to next phase?')) return;
-    await fetch('/admin/advance-phase', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin })
-    });
-    poll();
+    const btn = document.getElementById('btn-advance');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Advancing...';
+    const startTime = Date.now();
+    try {
+      await fetch('/admin/advance-phase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin })
+      });
+      poll();
+    } catch(e) { /* silent */ }
+    // Ensure minimum 2-second delay before re-enabling
+    const elapsed = Date.now() - startTime;
+    const remaining = Math.max(0, 2000 - elapsed);
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.disabled = false;
+      // Re-check if we're at phase 4 (done)
+      poll();
+    }, remaining);
   });
 
   document.getElementById('btn-reset').addEventListener('click', async () => {

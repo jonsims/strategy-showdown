@@ -113,6 +113,15 @@
   .funding-total.valid { color: #00694E; }
   .funding-total.invalid { color: #c0392b; }
 
+  /* Funding cards (Phase 3) */
+  .funding-card {
+    background: #fafafa; border-radius: 10px; padding: 14px;
+    margin-bottom: 12px; border: 1px solid #eee;
+  }
+  .self-fund-warning {
+    color: #c0392b; font-size: 0.8rem; font-weight: 600; margin-top: 4px;
+  }
+
   .hidden { display: none; }
 </style>
 </head>
@@ -122,6 +131,11 @@
   <h1>Strategy Showdown</h1>
   <div class="subtitle">Microsoft Sustainability Case</div>
 </header>
+
+<div id="identity-bar" class="hidden" style="background:#f0f8f5;padding:8px 16px;text-align:center;font-size:0.85rem;">
+  Logged in as <strong id="identity-name"></strong> (Team <span id="identity-team"></span>)
+  &mdash; <a href="#" id="switch-user" style="color:#c0392b;">Not you?</a>
+</div>
 
 <!-- JOIN SCREEN -->
 <div id="screen-join" class="container">
@@ -200,6 +214,16 @@
       <input type="text" id="ms-target" placeholder='e.g. "zero net freshwater"'>
       <label for="ms-funding">Funding Mechanism</label>
       <input type="text" id="ms-funding" placeholder='e.g. "15% of Azure revenue growth"'>
+      <label for="ms-leverage">Leverage Level (Fischer &amp; Riechers)</label>
+      <select id="ms-leverage">
+        <option value="">Classify your moonshot...</option>
+        <option value="Parameters">Parameters (shallowest — adjusting numbers)</option>
+        <option value="Feedbacks">Feedbacks (monitoring, delays, loops)</option>
+        <option value="Design">Design (rules, incentives, self-organization)</option>
+        <option value="Intent">Intent (deepest — system goals, paradigm shift)</option>
+      </select>
+      <label for="ms-cost">Who bears the ecological/community cost?</label>
+      <input type="text" id="ms-cost" placeholder='e.g. "Host communities lose water access"'>
       <button class="btn-submit" id="btn-moonshot" disabled>Submit Moonshot</button>
     </div>
   </div>
@@ -323,6 +347,24 @@
     document.getElementById('btn-join').disabled = !(name && team);
   }
 
+  // ── Identity bar & switch user ────────────────────────────────
+  function updateIdentityBar() {
+    const bar = document.getElementById('identity-bar');
+    if (studentId) {
+      document.getElementById('identity-name').textContent = studentName;
+      document.getElementById('identity-team').textContent = studentTeam;
+      bar.classList.remove('hidden');
+    } else {
+      bar.classList.add('hidden');
+    }
+  }
+
+  document.getElementById('switch-user').addEventListener('click', function(e) {
+    e.preventDefault();
+    sessionStorage.removeItem('ss-session');
+    location.reload();
+  });
+
   document.getElementById('join-name').addEventListener('input', checkJoinReady);
 
   document.getElementById('btn-join').addEventListener('click', async () => {
@@ -403,10 +445,12 @@
     const m = document.getElementById('ms-metric').value.trim();
     const t = document.getElementById('ms-target').value.trim();
     const f = document.getElementById('ms-funding').value.trim();
-    document.getElementById('btn-moonshot').disabled = !(y && g && m && t && f);
+    const l = document.getElementById('ms-leverage').value;
+    const cb = document.getElementById('ms-cost').value.trim();
+    document.getElementById('btn-moonshot').disabled = !(y && g && m && t && f && l && cb);
   }
 
-  ['ms-year', 'ms-goal', 'ms-metric', 'ms-target', 'ms-funding'].forEach(id => {
+  ['ms-year', 'ms-goal', 'ms-metric', 'ms-target', 'ms-funding', 'ms-leverage', 'ms-cost'].forEach(id => {
     document.getElementById(id).addEventListener('input', checkMoonshotReady);
     document.getElementById(id).addEventListener('change', checkMoonshotReady);
   });
@@ -424,7 +468,9 @@
           goal: document.getElementById('ms-goal').value.trim(),
           metric: document.getElementById('ms-metric').value.trim(),
           targetNumber: document.getElementById('ms-target').value.trim(),
-          funding: document.getElementById('ms-funding').value.trim()
+          funding: document.getElementById('ms-funding').value.trim(),
+          leverageLevel: document.getElementById('ms-leverage').value,
+          costBearer: document.getElementById('ms-cost').value.trim()
         })
       });
       const data = await res.json();
@@ -441,6 +487,13 @@
   // ── Phase 3 ──────────────────────────────────────────────────────
   let moonshotTeams = {};
 
+  const leverageColors = {
+    'Parameters': '#7f8c8d',
+    'Feedbacks': '#2980b9',
+    'Design': '#C5A033',
+    'Intent': '#16a085'
+  };
+
   function buildFundingRows(moonshots) {
     moonshotTeams = moonshots;
     const container = document.getElementById('funding-rows');
@@ -452,14 +505,26 @@
     }
     teamIds.forEach(tid => {
       const ms = moonshots[tid];
-      const row = document.createElement('div');
-      row.className = 'funding-row';
-      row.innerHTML = `
-        <div class="funding-team">Team ${tid}</div>
-        <div class="funding-goal">${escapeHtml(ms.goal).substring(0, 60)}${ms.goal.length > 60 ? '...' : ''}</div>
-        <input type="number" class="funding-input" data-team="${tid}" value="0" min="0" max="100" inputmode="numeric">
+      const goal = escapeHtml(ms.goal);
+      const leverageColor = leverageColors[ms.leverageLevel] || '#999';
+      const card = document.createElement('div');
+      card.className = 'funding-card';
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span class="funding-team">Team ${tid}</span>
+          <span style="background:#C5A033;color:white;padding:2px 8px;border-radius:10px;font-size:0.75rem;font-weight:700;">${escapeHtml(ms.year)}</span>
+        </div>
+        <div style="font-size:0.82rem;color:#333;line-height:1.3;margin-bottom:6px;">${goal}</div>
+        <div style="font-size:0.75rem;margin-bottom:6px;">
+          <span style="background:${leverageColor};color:white;padding:2px 8px;border-radius:4px;">${escapeHtml(ms.leverageLevel || 'N/A')}</span>
+          <span style="color:#c0392b;margin-left:8px;">${escapeHtml(ms.costBearer || '')}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:0.8rem;color:#777;">Points:</span>
+          <input type="number" class="funding-input" data-team="${tid}" value="0" min="0" max="100" inputmode="numeric">
+        </div>
       `;
-      container.appendChild(row);
+      container.appendChild(card);
     });
     container.querySelectorAll('.funding-input').forEach(input => {
       input.addEventListener('input', updateFundingTotal);
@@ -469,13 +534,35 @@
 
   function updateFundingTotal() {
     let total = 0;
+    let selfOverCap = false;
     document.querySelectorAll('.funding-input').forEach(input => {
-      total += parseInt(input.value) || 0;
+      const val = parseInt(input.value) || 0;
+      total += val;
+      if (parseInt(input.dataset.team) === studentTeam && val > 25) {
+        selfOverCap = true;
+      }
     });
     const el = document.getElementById('funding-total');
-    el.textContent = `Total: ${total} / 100`;
-    el.className = 'funding-total ' + (total === 100 ? 'valid' : 'invalid');
-    document.getElementById('btn-fund').disabled = (total !== 100);
+
+    // Remove old warning if present
+    let warn = document.getElementById('self-fund-warning');
+    if (warn) warn.remove();
+
+    if (selfOverCap) {
+      el.textContent = `Total: ${total} / 100`;
+      el.className = 'funding-total invalid';
+      // Add warning
+      warn = document.createElement('div');
+      warn.id = 'self-fund-warning';
+      warn.className = 'self-fund-warning';
+      warn.textContent = 'Max 25 points to your own team.';
+      el.parentNode.insertBefore(warn, el.nextSibling);
+      document.getElementById('btn-fund').disabled = true;
+    } else {
+      el.textContent = `Total: ${total} / 100`;
+      el.className = 'funding-total ' + (total === 100 ? 'valid' : 'invalid');
+      document.getElementById('btn-fund').disabled = (total !== 100);
+    }
   }
 
   document.getElementById('btn-fund').addEventListener('click', async () => {
@@ -505,12 +592,27 @@
   // ── Screen rendering ─────────────────────────────────────────────
   function renderScreen() {
     hideAll();
+    updateIdentityBar();
     if (!studentId) { show($join); return; }
 
     if (currentPhase === 1) {
       if (phase1Submitted) show($p1done);
       else show($p1);
     } else if (currentPhase === 2) {
+      // Late joiner: missed Phase 1
+      if (!phase1Submitted) {
+        // Show late-join notice inside Phase 2 screen
+        const notice = document.getElementById('moonshot-form-area');
+        const existingNotice = document.getElementById('late-join-notice');
+        if (!existingNotice) {
+          const div = document.createElement('div');
+          div.id = 'late-join-notice';
+          div.className = 'card';
+          div.style.cssText = 'text-align:center;color:#C5A033;padding:16px;margin-bottom:12px;';
+          div.innerHTML = '<p style="font-weight:600;">You joined after Phase 1 ended. You can still participate in the current phase!</p>';
+          notice.parentNode.insertBefore(div, notice);
+        }
+      }
       document.getElementById('my-team-num').textContent = studentTeam;
       // Check if our team already has a moonshot
       if (moonshotSubmitted) {
@@ -522,6 +624,29 @@
       }
       show($p2);
     } else if (currentPhase === 3) {
+      // Late joiner notices
+      if (!phase1Submitted) {
+        const existingP1Notice = document.getElementById('late-join-p1-notice');
+        if (!existingP1Notice) {
+          const div = document.createElement('div');
+          div.id = 'late-join-p1-notice';
+          div.className = 'card';
+          div.style.cssText = 'text-align:center;color:#C5A033;padding:16px;margin-bottom:12px;';
+          div.innerHTML = '<p style="font-weight:600;">You joined after Phase 1 ended. You can still participate in the current phase!</p>';
+          document.getElementById('funding-form-area').parentNode.insertBefore(div, document.getElementById('funding-form-area'));
+        }
+      }
+      if (!moonshotSubmitted && currentPhase > 2) {
+        const existingP2Notice = document.getElementById('late-join-p2-notice');
+        if (!existingP2Notice) {
+          const div = document.createElement('div');
+          div.id = 'late-join-p2-notice';
+          div.className = 'card';
+          div.style.cssText = 'text-align:center;color:#C5A033;padding:16px;margin-bottom:12px;';
+          div.innerHTML = '<p style="font-weight:600;">Your team did not submit a moonshot in Phase 2.</p>';
+          document.getElementById('funding-form-area').parentNode.insertBefore(div, document.getElementById('funding-form-area'));
+        }
+      }
       if (fundingSubmitted) {
         document.getElementById('funding-form-area').classList.add('hidden');
         document.getElementById('funding-done').classList.remove('hidden');

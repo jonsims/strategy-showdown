@@ -1,10 +1,12 @@
 const express = require('express');
+const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
 const app = express();
 const PORT = process.env.PORT || 3020;
 const ADMIN_PIN = '2030';
+const STATE_FILE = path.join(__dirname, 'state.json');
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -19,14 +21,40 @@ function freshState() {
     numTeams: 8,         // configurable by admin
     students: [],        // { id, name, team }
     phase1: [],          // { studentId, name, team, strategy, energyNumber, costNumber, impactNumber }
-    moonshots: {},       // teamId → { teamId, year, goal, metric, targetNumber, funding }
+    moonshots: {},       // teamId → { teamId, year, goal, metric, targetNumber, funding, leverageLevel, costBearer }
     funding: [],         // { studentId, allocations: { teamId: points } }
+    budgets: {},         // teamId → { teamId, modular, renewable, optimize }
   };
 }
 
 // Unique ID generator
 let nextId = 1;
 function genId() { return String(nextId++); }
+
+// ── State persistence (crash recovery) ──────────────────────────────────────
+
+function saveState() {
+  try { fs.writeFileSync(STATE_FILE, JSON.stringify({ state, nextId })); } catch(e) {}
+}
+
+function loadState() {
+  try {
+    if (fs.existsSync(STATE_FILE)) {
+      const saved = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+      state = saved.state;
+      nextId = saved.nextId;
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+// Load persisted state if available
+loadState();
+
+// ── Phase advance cooldown ──────────────────────────────────────────────────
+
+let lastAdvanceTime = 0;
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
@@ -72,6 +100,7 @@ app.get('/api/state', (_req, res) => {
     strategyCounts,
     numbersFeed,
     moonshots: state.moonshots,
+    budgets: state.budgets,
     fundingTotals,
     fundingVoterCount: state.funding.length
   });
@@ -93,6 +122,7 @@ app.post('/api/join', (req, res) => {
   const id = genId();
   const student = { id, name: name.trim(), team: teamNum };
   state.students.push(student);
+  saveState();
   res.json({ studentId: id, name: student.name, team: student.team });
 });
 
@@ -122,15 +152,23 @@ app.post('/api/phase1', (req, res) => {
     costNumber: costNumber.trim(),
     impactNumber: impactNumber.trim()
   });
+  saveState();
   res.json({ ok: true });
 });
 
 // Phase 2 — Moonshot
 app.post('/api/moonshot', (req, res) => {
   if (state.phase !== 2) return res.status(400).json({ error: 'Not in Phase 2' });
-  const { teamId, year, goal, metric, targetNumber, funding } = req.body;
-  if (!teamId || !year || !goal || !metric || !targetNumber || !funding) {
+  const { teamId, year, goal, metric, targetNumber, funding, leverageLevel, costBearer } = req.body;
+  if (!teamId || !year || !goal || !metric || !targetNumber || !funding || !leverageLevel || !costBearer) {
     return res.status(400).json({ error: 'All fields required' });
+  }
+  const validLeverage = ['Parameters', 'Feedbacks', 'Design', 'Intent'];
+  if (!validLeverage.includes(leverageLevel)) {
+    return res.status(400).json({ error: 'leverageLevel must be one of: Parameters, Feedbacks, Design, Intent' });
+  }
+  if (typeof costBearer !== 'string' || !costBearer.trim()) {
+    return res.status(400).json({ error: 'costBearer must be a non-empty string' });
   }
   const tid = parseInt(teamId);
   if (isNaN(tid) || tid < 1 || tid > state.numTeams) {
@@ -148,8 +186,11 @@ app.post('/api/moonshot', (req, res) => {
     goal: goal.trim(),
     metric: metric.trim(),
     targetNumber: targetNumber.trim(),
-    funding: funding.trim()
+    funding: funding.trim(),
+    leverageLevel,
+    costBearer: costBearer.trim()
   };
+  saveState();
   res.json({ ok: true });
 });
 
@@ -175,7 +216,44 @@ app.post('/api/fund', (req, res) => {
   }
   if (total !== 100) return res.status(400).json({ error: `Points must sum to 100 (got ${total})` });
 
+  // Self-funding cap: cannot allocate more than 25 points to own team
+  const studentTeam = String(student.team);
+  const selfAlloc = parseInt(allocations[studentTeam]) || 0;
+  if (selfAlloc > 25) {
+    return res.status(400).json({ error: 'Cannot allocate more than 25 points to your own team' });
+  }
+
   state.funding.push({ studentId, allocations });
+  saveState();
+  res.json({ ok: true });
+});
+
+// Phase 1 — Budget Allocation
+app.post('/api/budget', (req, res) => {
+  if (state.phase !== 1) return res.status(400).json({ error: 'Not in Phase 1' });
+  const { teamId, modular, renewable, optimize } = req.body;
+  if (teamId === undefined || modular === undefined || renewable === undefined || optimize === undefined) {
+    return res.status(400).json({ error: 'teamId, modular, renewable, and optimize are required' });
+  }
+  const tid = parseInt(teamId);
+  if (isNaN(tid) || tid < 1 || tid > state.numTeams) {
+    return res.status(400).json({ error: 'Invalid team' });
+  }
+  const m = parseInt(modular), r = parseInt(renewable), o = parseInt(optimize);
+  if (isNaN(m) || isNaN(r) || isNaN(o)) {
+    return res.status(400).json({ error: 'modular, renewable, and optimize must be numbers' });
+  }
+  if (m + r + o !== 100) {
+    return res.status(400).json({ error: `Budget values must sum to 100 (got ${m + r + o})` });
+  }
+  if (!(m >= 60 || r >= 60 || o >= 60)) {
+    return res.status(400).json({ error: 'At least one budget category must be 60 or above' });
+  }
+  if (state.budgets[tid]) {
+    return res.status(400).json({ error: 'Your team has already submitted a budget' });
+  }
+  state.budgets[tid] = { teamId: tid, modular: m, renewable: r, optimize: o };
+  saveState();
   res.json({ ok: true });
 });
 
@@ -188,7 +266,13 @@ function checkPin(pin) {
 app.post('/admin/advance-phase', (req, res) => {
   if (!checkPin(req.body.pin)) return res.status(403).json({ error: 'Invalid PIN' });
   if (state.phase >= 4) return res.status(400).json({ error: 'Already finished' });
+  const now = Date.now();
+  if (now - lastAdvanceTime < 2000) {
+    return res.status(429).json({ error: 'Please wait before advancing phase again' });
+  }
   state.phase++;
+  lastAdvanceTime = now;
+  saveState();
   res.json({ phase: state.phase });
 });
 
@@ -197,6 +281,7 @@ app.post('/admin/set-phase', (req, res) => {
   const p = parseInt(req.body.phase);
   if (isNaN(p) || p < 1 || p > 4) return res.status(400).json({ error: 'Phase must be 1-4' });
   state.phase = p;
+  saveState();
   res.json({ phase: state.phase });
 });
 
@@ -205,6 +290,7 @@ app.post('/admin/set-teams', (req, res) => {
   const n = parseInt(req.body.numTeams);
   if (isNaN(n) || n < 1 || n > 20) return res.status(400).json({ error: 'Teams must be 1-20' });
   state.numTeams = n;
+  saveState();
   res.json({ numTeams: n });
 });
 
@@ -214,6 +300,7 @@ app.post('/admin/reset', (req, res) => {
   state = freshState();
   state.numTeams = teams;
   nextId = 1;
+  saveState();
   res.json({ ok: true });
 });
 
