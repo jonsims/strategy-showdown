@@ -3,687 +3,139 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Strategy Showdown - Display</title>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<title>Moonshot Display - Strategy Showdown</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #F0F0F0; color: #333;
-    min-height: 100vh; overflow-x: hidden;
+    background: #F0F0F0; color: #333; min-height: 100vh;
   }
-
-  /* Header */
-  .display-header {
+  .header {
     background: #00694E; color: white;
     padding: 20px 40px; display: flex;
     align-items: center; justify-content: space-between;
   }
-  .display-header h1 { font-size: 2rem; font-weight: 800; }
-  .display-header .phase-label {
+  .header h1 { font-size: 2rem; font-weight: 800; }
+  .header .counter {
     background: #C5A033; padding: 8px 24px; border-radius: 30px;
-    font-size: 1.2rem; font-weight: 700;
+    font-size: 1.1rem; font-weight: 700;
   }
+  .body { padding: 30px 40px; }
 
-  /* Main layout */
-  .display-body { padding: 30px 40px; }
-
-  /* Phase context line */
-  .phase-context {
-    text-align: center; font-style: italic; color: #555;
-    font-size: 1.15rem; line-height: 1.5;
-    margin-bottom: 24px; padding: 0 40px;
-  }
-
-  /* QR + Join section — smaller */
-  .join-section {
-    display: flex; align-items: center; gap: 24px;
-    background: white; border-radius: 12px;
-    padding: 16px 24px; margin-bottom: 24px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-  }
-  .qr-container { flex-shrink: 0; }
-  .qr-container canvas { border-radius: 8px; }
-  .join-info h2 { font-size: 1.2rem; color: #00694E; margin-bottom: 4px; }
-  .join-info .url { font-size: 1rem; color: #555; font-family: monospace; word-break: break-all; }
-  .join-info .counter {
-    margin-top: 6px; font-size: 0.95rem; color: #C5A033; font-weight: 700;
-  }
-
-  /* Phase containers */
-  .phase-section { display: none; }
-  .phase-section.active { display: block; }
-
-  /* ── Phase 1: Strategy Bars ── */
-  .strategy-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
-    margin-bottom: 30px;
-  }
-  .strategy-col {
-    background: white; border-radius: 16px; padding: 24px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  }
-  .strategy-col h3 {
-    font-size: 1.3rem; margin-bottom: 16px; text-align: center;
-  }
-  .strategy-col .emoji-big { font-size: 2.5rem; display: block; text-align: center; margin-bottom: 8px; }
-  .strategy-col .total-count {
-    text-align: center; font-size: 2.5rem; font-weight: 800; color: #00694E;
-    margin-bottom: 12px;
-  }
-  .team-bar-row {
-    display: flex; align-items: center; gap: 8px;
-    margin-bottom: 6px; font-size: 0.85rem;
-  }
-  .team-bar-label { width: 70px; font-weight: 600; color: #555; flex-shrink: 0; display: flex; align-items: center; gap: 4px; }
-  .team-bar-track {
-    flex: 1; height: 22px; background: #eee; border-radius: 6px;
-    overflow: hidden; position: relative;
-  }
-  .team-bar-fill {
-    height: 100%; border-radius: 6px;
-    transition: width 0.6s ease;
-    min-width: 0;
-  }
-
-  /* Split badge */
-  .split-badge {
-    display: inline-block; background: #e74c3c; color: white;
-    font-size: 0.65rem; font-weight: 800; padding: 1px 5px;
-    border-radius: 4px; line-height: 1.3; vertical-align: middle;
-    white-space: nowrap;
-  }
-
-  /* Team colors */
-  .team-color-1 { background: #00694E; }
-  .team-color-2 { background: #C5A033; }
-  .team-color-3 { background: #2980b9; }
-  .team-color-4 { background: #8e44ad; }
-  .team-color-5 { background: #e67e22; }
-  .team-color-6 { background: #c0392b; }
-  .team-color-7 { background: #16a085; }
-  .team-color-8 { background: #d35400; }
-  .team-color-9 { background: #7f8c8d; }
-  .team-color-10 { background: #2c3e50; }
-  .team-color-11 { background: #1abc9c; }
-  .team-color-12 { background: #9b59b6; }
-
-  /* Numbers feed */
-  .numbers-feed {
-    background: white; border-radius: 16px; padding: 24px;
-    max-height: 320px; overflow-y: auto;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  }
-  .numbers-feed h3 { font-size: 1.2rem; color: #00694E; margin-bottom: 16px; }
-  .feed-item {
-    padding: 10px 0; border-bottom: 1px solid #eee;
-    display: flex; align-items: baseline; gap: 12px;
-    animation: fadeIn 0.4s ease;
-  }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
-  .feed-item:last-child { border-bottom: none; }
-  .feed-name { font-weight: 700; color: #00694E; min-width: 80px; font-size: 0.9rem; }
-  .feed-strategy { font-size: 0.8rem; color: #777; min-width: 60px; }
-  .feed-numbers { font-size: 0.85rem; color: #333; }
-  .feed-numbers span {
-    background: #f0f0f0; padding: 2px 8px; border-radius: 4px;
-    margin-right: 6px; display: inline-block; margin-bottom: 2px;
-  }
-
-  /* Submission counter */
-  .submission-counter {
-    text-align: center; background: white; border-radius: 16px;
-    padding: 20px; margin-bottom: 24px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  }
-  .submission-counter .big-num { font-size: 3.5rem; font-weight: 800; color: #00694E; }
-  .submission-counter .label { font-size: 1rem; color: #777; }
-
-  /* ── Phase 2: Moonshot Cards ── */
-  .moonshot-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  /* Moonshot grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
     gap: 24px;
   }
-  .moonshot-card {
+  .card {
     background: white; border-radius: 16px; padding: 28px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.08);
     border-left: 6px solid #00694E;
     animation: slideIn 0.5s ease;
   }
   @keyframes slideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: none; } }
-  .moonshot-card .team-header {
+  .card .team-header {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
   }
-  .moonshot-card .team-name { font-size: 1.3rem; font-weight: 800; color: #00694E; }
-  .moonshot-card .year-badge {
+  .card .team-name { font-size: 1.3rem; font-weight: 800; color: #00694E; }
+  .card .year-badge {
     background: #C5A033; color: white; padding: 4px 14px;
     border-radius: 20px; font-weight: 700; font-size: 1rem;
   }
-  .moonshot-card .goal { font-size: 1.15rem; line-height: 1.4; margin-bottom: 12px; color: #333; }
-  .moonshot-card .cost-bearer-line {
-    font-size: 0.95rem; color: #d4820a; font-weight: 600;
+  .card .goal { font-size: 1.15rem; line-height: 1.4; margin-bottom: 12px; color: #333; }
+  .card .cost-line {
+    font-size: 0.95rem; color: #c0392b; font-weight: 600;
     margin-bottom: 14px; padding: 6px 10px;
-    background: rgba(212, 130, 10, 0.08); border-radius: 6px;
+    background: rgba(192,57,43,0.06); border-radius: 6px;
   }
-  .moonshot-card .key-number {
+  .card .key-number {
     background: #f0f8f5; border: 2px solid #00694E; border-radius: 10px;
     padding: 12px 16px; text-align: center; margin-bottom: 12px;
   }
-  .moonshot-card .key-number .value { font-size: 1.6rem; font-weight: 800; color: #00694E; }
-  .moonshot-card .key-number .metric-label { font-size: 0.8rem; color: #777; }
-  .moonshot-card .funding-line {
+  .card .key-number .value { font-size: 1.6rem; font-weight: 800; color: #00694E; }
+  .card .key-number .metric-label { font-size: 0.8rem; color: #777; }
+  .card .funding-line {
     font-size: 0.9rem; color: #555;
     padding-top: 8px; border-top: 1px solid #eee;
   }
-  .moonshot-card .funding-line strong { color: #C5A033; }
-
-  /* Leverage badge */
+  .card .funding-line strong { color: #C5A033; }
   .leverage-badge {
     display: inline-block; color: white; padding: 3px 10px;
     border-radius: 12px; font-size: 0.78rem; font-weight: 700;
-    letter-spacing: 0.3px;
   }
-  .leverage-parameters { background: #7f8c8d; }
-  .leverage-feedbacks { background: #2980b9; }
-  .leverage-design { background: #C5A033; }
-  .leverage-intent { background: #16a085; }
-
-  .moonshot-waiting {
-    text-align: center; padding: 60px; color: #999;
-    font-size: 1.3rem;
+  .lv-Parameters { background: #7f8c8d; }
+  .lv-Feedbacks { background: #2980b9; }
+  .lv-Design { background: #C5A033; }
+  .lv-Intent { background: #16a085; }
+  .waiting {
+    text-align: center; padding: 80px 20px; color: #999; font-size: 1.3rem;
   }
-
-  /* ── Phase 3: Funding Bars ── */
-  .funding-container {
-    background: white; border-radius: 16px; padding: 30px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  }
-  .funding-container h3 {
-    font-size: 1.4rem; color: #00694E; margin-bottom: 24px;
-    text-align: center;
-  }
-  .funding-bar-row {
-    display: flex; align-items: center; gap: 12px;
-    margin-bottom: 16px; min-height: 50px;
-  }
-  .funding-bar-team {
-    font-weight: 800; font-size: 1.1rem; color: #333;
-    min-width: 80px; text-align: right;
-  }
-  .funding-bar-meta {
-    display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
-    min-width: 130px; flex-shrink: 0;
-  }
-  .funding-bar-cost {
-    font-size: 0.7rem; color: #d4820a; font-weight: 600;
-    max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .funding-bar-track {
-    flex: 1; height: 44px; background: #eee;
-    border-radius: 10px; overflow: hidden; position: relative;
-  }
-  .funding-bar-fill {
-    height: 100%; background: #00694E; border-radius: 10px;
-    transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    display: flex; align-items: center; justify-content: flex-end;
-    padding-right: 12px; min-width: 0;
-  }
-  .funding-bar-value {
-    font-weight: 800; font-size: 1.1rem; color: white;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-    white-space: nowrap;
-  }
-  .funding-bar-goal {
-    font-size: 0.8rem; color: #777; max-width: 200px;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .funding-voter-count {
-    text-align: center; margin-top: 20px;
-    font-size: 1rem; color: #999;
-  }
-
-  /* Ranking overlay for done state */
-  .ranking-badge {
-    min-width: 36px; height: 36px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 1.1rem; flex-shrink: 0;
-  }
-  .rank-1 { background: #C5A033; color: white; }
-  .rank-2 { background: #aaa; color: white; }
-  .rank-3 { background: #cd7f32; color: white; }
-  .rank-other { background: #ddd; color: #666; }
-
-  /* ── Done screen ── */
-  .done-section {
-    text-align: center; padding: 60px 20px;
-  }
-  .done-section h2 { font-size: 2.5rem; color: #00694E; margin-bottom: 12px; }
-  .done-section p { font-size: 1.2rem; color: #777; }
-
-  .discussion-prompt {
-    margin-top: 36px; padding: 28px 36px;
-    background: #f0f8f5; border: 2px solid #00694E;
-    border-radius: 14px; text-align: left;
-  }
-  .discussion-prompt h4 {
-    font-size: 1.1rem; color: #00694E; margin-bottom: 10px;
-    text-transform: uppercase; letter-spacing: 1px;
-  }
-  .discussion-prompt p {
-    font-size: 1.15rem; line-height: 1.6; color: #333;
-    font-style: italic;
-  }
-
-  .hidden { display: none !important; }
+  .waiting .icon { font-size: 3rem; margin-bottom: 16px; }
 </style>
 </head>
 <body>
 
-<div class="display-header">
-  <h1>Strategy Showdown</h1>
-  <span class="phase-label" id="phase-label">Phase 1: Place Your Bet</span>
+<div class="header">
+  <h1>Moonshot Moment</h1>
+  <span class="counter" id="counter">0 of 0 teams</span>
 </div>
 
-<div class="display-body">
-  <!-- Phase context line -->
-  <div class="phase-context" id="phase-context"></div>
-
-  <!-- QR Join (smaller) -->
-  <div class="join-section" id="join-section">
-    <div class="qr-container"><canvas id="qr-canvas"></canvas></div>
-    <div class="join-info">
-      <h2>Join</h2>
-      <div class="url" id="join-url"></div>
-      <div class="counter" id="join-counter">0 students joined</div>
-    </div>
-  </div>
-
-  <!-- Phase 1 -->
-  <div class="phase-section" id="phase-1">
-    <div class="submission-counter">
-      <div class="big-num" id="p1-count">0</div>
-      <div class="label">bets placed</div>
-    </div>
-    <!-- Waiting overlay shown until 75% threshold -->
-    <div id="p1-waiting-overlay" style="text-align:center;padding:60px 20px;">
-      <div style="font-size:2rem;font-weight:800;color:#00694E;margin-bottom:16px;">Submitting...</div>
-      <div style="font-size:1.3rem;color:#555;margin-bottom:24px;" id="p1-waiting-text">0 of 0 bets placed</div>
-      <div style="max-width:500px;margin:0 auto;height:28px;background:#eee;border-radius:14px;overflow:hidden;">
-        <div id="p1-progress-bar" style="height:100%;background:#00694E;border-radius:14px;transition:width 0.6s ease;width:0;"></div>
-      </div>
-    </div>
-    <div id="p1-results" class="hidden">
-      <div class="strategy-grid" id="strategy-grid"></div>
-      <div class="numbers-feed" id="numbers-feed">
-        <h3>Numbers Cited</h3>
-        <div id="feed-items"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Phase 2 -->
-  <div class="phase-section" id="phase-2">
-    <div class="moonshot-grid" id="moonshot-grid">
-      <div class="moonshot-waiting">Waiting for team moonshots...</div>
-    </div>
-  </div>
-
-  <!-- Phase 3 -->
-  <div class="phase-section" id="phase-3">
-    <div class="funding-container">
-      <h3>Budget Allocation</h3>
-      <div id="funding-bars"></div>
-      <div class="funding-voter-count" id="funding-voter-count">0 votes in</div>
-    </div>
-  </div>
-
-  <!-- Done -->
-  <div class="phase-section" id="phase-done">
-    <div class="funding-container">
-      <h3>Final Funding Rankings</h3>
-      <div id="final-rankings"></div>
-    </div>
-    <div class="discussion-prompt">
-      <h4>Discussion</h4>
-      <p>How do these proposals compare to what Microsoft actually did? Which leverage level did the class favor &mdash; and is it deep enough to bend the curve?</p>
+<div class="body">
+  <div class="grid" id="grid">
+    <div class="waiting">
+      <div class="icon">&#x1F680;</div>
+      <p>Waiting for team moonshots...</p>
     </div>
   </div>
 </div>
 
 <script>
 (function() {
-  const strategies = ['Redesign the Machine', 'Change the Fuel', 'Tune the Engine'];
-  const strategyEmoji = {
-    'Redesign the Machine': '\u{1F3D7}\u{FE0F}',
-    'Change the Fuel': '\u26A1',
-    'Tune the Engine': '\u{1F527}'
-  };
-  const strategyColors = {
-    'Redesign the Machine': '#00694E',
-    'Change the Fuel': '#C5A033',
-    'Tune the Engine': '#2980b9'
-  };
-  const leverageColors = {
-    'Parameters': '#7f8c8d',
-    'Feedbacks': '#2980b9',
-    'Design': '#C5A033',
-    'Intent': '#16a085'
-  };
-  const leverageClasses = {
-    'Parameters': 'leverage-parameters',
-    'Feedbacks': 'leverage-feedbacks',
-    'Design': 'leverage-design',
-    'Intent': 'leverage-intent'
-  };
+  function esc(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 
-  const phaseContextText = {
-    1: 'Microsoft has $245B in revenue, 300+ data centers, and a 2030 deadline. Where should they place their biggest bet?',
-    2: "Kennedy said \u201Cmoon by end of decade.\u201D What\u2019s Microsoft\u2019s equivalent? Specific. Measurable. Audacious.",
-    3: "You\u2019re the investors. Which proposal is ambitious AND feasible? Put your money where your mouth is."
-  };
-
-  let currentPhase = 0;
-  let prevFeedLen = 0;
-  let phase1Revealed = false;
-  // Store raw phase1 data for split detection
-  let phase1Data = [];
-  let numTeamsCache = 8;
-
-  // Generate QR code — smaller
-  const baseUrl = window.location.origin;
-  document.getElementById('join-url').textContent = baseUrl;
-  QRCode.toCanvas(document.getElementById('qr-canvas'), baseUrl, {
-    width: 120, margin: 2,
-    color: { dark: '#00694E', light: '#ffffff' }
-  });
-
-  // Phases
-  const phaseLabels = {
-    1: 'Phase 1: Place Your Bet',
-    2: 'Phase 2: Moonshot Moment',
-    3: 'Phase 3: Fund It or Kill It',
-    4: 'Session Complete'
-  };
-
-  function showPhase(phase) {
-    document.querySelectorAll('.phase-section').forEach(el => el.classList.remove('active'));
-    if (phase === 1) document.getElementById('phase-1').classList.add('active');
-    else if (phase === 2) document.getElementById('phase-2').classList.add('active');
-    else if (phase === 3) document.getElementById('phase-3').classList.add('active');
-    else if (phase >= 4) document.getElementById('phase-done').classList.add('active');
-    document.getElementById('phase-label').textContent = phaseLabels[phase] || 'Phase ' + phase;
-
-    // Update phase context
-    const ctxEl = document.getElementById('phase-context');
-    if (phaseContextText[phase]) {
-      ctxEl.textContent = phaseContextText[phase];
-      ctxEl.style.display = '';
-    } else {
-      ctxEl.style.display = 'none';
-    }
-
-    // Hide QR once done
-    if (phase >= 4) document.getElementById('join-section').style.display = 'none';
-  }
-
-  // Detect split teams: returns Set of team numbers where members picked different strategies
-  function getSplitTeams(numTeams) {
-    const teamVotes = {};
-    for (let t = 1; t <= numTeams; t++) teamVotes[t] = new Set();
-    phase1Data.forEach(s => {
-      if (teamVotes[s.team]) teamVotes[s.team].add(s.strategy);
-    });
-    const splits = new Set();
-    for (let t = 1; t <= numTeams; t++) {
-      if (teamVotes[t].size > 1) splits.add(t);
-    }
-    return splits;
-  }
-
-  function buildStrategyGrid(numTeams) {
-    const grid = document.getElementById('strategy-grid');
-    grid.innerHTML = '';
-    const splitTeams = getSplitTeams(numTeams);
-    strategies.forEach(s => {
-      const col = document.createElement('div');
-      col.className = 'strategy-col';
-      col.dataset.strategy = s;
-      let barsHTML = '';
-      for (let t = 1; t <= numTeams; t++) {
-        const splitHTML = splitTeams.has(t) ? ' <span class="split-badge">\u26A1 SPLIT</span>' : '';
-        barsHTML += `
-          <div class="team-bar-row">
-            <div class="team-bar-label">T${t}${splitHTML}</div>
-            <div class="team-bar-track">
-              <div class="team-bar-fill team-color-${(t - 1) % 12 + 1}" id="bar-${s.replace(/\s/g,'')}-${t}" style="width:0"></div>
-            </div>
-          </div>`;
-      }
-      col.innerHTML = `
-        <span class="emoji-big">${strategyEmoji[s]}</span>
-        <h3>${s}</h3>
-        <div class="total-count" id="total-${s.replace(/\s/g,'')}">0</div>
-        ${barsHTML}
-      `;
-      grid.appendChild(col);
-    });
-  }
-
-  function updatePhase1(data) {
-    document.getElementById('p1-count').textContent = data.phase1Count;
-
-    const threshold = data.studentCount * 0.75;
-    const belowThreshold = data.phase1Count < threshold && data.studentCount > 0;
-
-    if (!phase1Revealed && belowThreshold) {
-      // Show waiting overlay with progress
-      document.getElementById('p1-waiting-overlay').classList.remove('hidden');
-      document.getElementById('p1-results').classList.add('hidden');
-      document.getElementById('p1-waiting-text').textContent =
-        data.phase1Count + ' of ' + data.studentCount + ' bets placed';
-      const pct = data.studentCount > 0 ? (data.phase1Count / data.studentCount) * 100 : 0;
-      document.getElementById('p1-progress-bar').style.width = pct + '%';
-      return;
-    }
-
-    // Once threshold reached, reveal and lock
-    if (!phase1Revealed) {
-      phase1Revealed = true;
-      // Rebuild grid now that we have phase1Data for split detection
-      buildStrategyGrid(data.numTeams);
-    }
-    document.getElementById('p1-waiting-overlay').classList.add('hidden');
-    document.getElementById('p1-results').classList.remove('hidden');
-
-    // Strategy totals and bars
-    const splitTeams = getSplitTeams(data.numTeams);
-    strategies.forEach(s => {
-      let total = 0;
-      let maxPerTeam = 0;
-      for (let t = 1; t <= data.numTeams; t++) {
-        const c = data.strategyCounts[t]?.[s] || 0;
-        total += c;
-        if (c > maxPerTeam) maxPerTeam = c;
-      }
-      const totalEl = document.getElementById('total-' + s.replace(/\s/g, ''));
-      if (totalEl) totalEl.textContent = total;
-
-      for (let t = 1; t <= data.numTeams; t++) {
-        const bar = document.getElementById('bar-' + s.replace(/\s/g, '') + '-' + t);
-        if (bar) {
-          const c = data.strategyCounts[t]?.[s] || 0;
-          const pct = maxPerTeam > 0 ? (c / maxPerTeam) * 100 : 0;
-          bar.style.width = pct + '%';
-        }
-      }
-    });
-
-    // Numbers feed
-    const feedEl = document.getElementById('feed-items');
-    if (data.numbersFeed.length !== prevFeedLen) {
-      feedEl.innerHTML = data.numbersFeed.slice(0, 30).map(f =>
-        `<div class="feed-item">
-          <span class="feed-name">${esc(f.name)} (T${f.team})</span>
-          <span class="feed-strategy">${strategyEmoji[f.strategy] || ''}</span>
-          <span class="feed-numbers">
-            <span>${esc(f.energyNumber)}</span>
-            <span>${esc(f.costNumber)}</span>
-            <span>${esc(f.impactNumber)}</span>
-          </span>
-        </div>`
-      ).join('');
-      prevFeedLen = data.numbersFeed.length;
-    }
-  }
-
-  function getLeverageBadgeHTML(level) {
-    if (!level) return '';
-    const cls = leverageClasses[level] || 'leverage-parameters';
-    return `<span class="leverage-badge ${cls}">${esc(level)}</span>`;
-  }
-
-  function updatePhase2(data) {
-    const grid = document.getElementById('moonshot-grid');
-    const moonshots = Object.values(data.moonshots);
-    if (moonshots.length === 0) {
-      grid.innerHTML = '<div class="moonshot-waiting">Waiting for team moonshots...</div>';
-      return;
-    }
-    grid.innerHTML = moonshots.map(m => {
-      const costBearerHTML = m.costBearer
-        ? `<div class="cost-bearer-line">Who bears the cost? ${esc(m.costBearer)}</div>`
-        : '';
-      return `<div class="moonshot-card" style="border-left-color: var(--team-${m.teamId}-color, #00694E);">
-        <div class="team-header">
-          <div class="team-name">Team ${m.teamId}</div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            ${getLeverageBadgeHTML(m.leverageLevel)}
-            <div class="year-badge">${m.year}</div>
-          </div>
-        </div>
-        <div class="goal">${esc(m.goal)}</div>
-        ${costBearerHTML}
-        <div class="key-number">
-          <div class="value">${esc(m.targetNumber)}</div>
-          <div class="metric-label">${esc(m.metric)}</div>
-        </div>
-        <div class="funding-line"><strong>Funding:</strong> ${esc(m.funding)}</div>
-      </div>`;
-    }).join('');
-  }
-
-  function updatePhase3(data) {
-    const container = document.getElementById('funding-bars');
-    const moonshots = data.moonshots;
-    const teamIds = Object.keys(moonshots).map(Number).sort((a, b) => a - b);
-    if (teamIds.length === 0) { container.innerHTML = '<p style="text-align:center;color:#999">No moonshots to fund.</p>'; return; }
-
-    const maxFunding = Math.max(1, ...Object.values(data.fundingTotals));
-
-    container.innerHTML = teamIds.map(tid => {
-      const ms = moonshots[tid];
-      const pts = data.fundingTotals[tid] || 0;
-      const pct = (pts / maxFunding) * 100;
-      const costShort = ms.costBearer ? ms.costBearer.substring(0, 30) : '';
-      return `
-        <div class="funding-bar-row">
-          <div class="funding-bar-team">Team ${tid}</div>
-          <div class="funding-bar-meta">
-            ${getLeverageBadgeHTML(ms.leverageLevel)}
-            ${costShort ? `<span class="funding-bar-cost">${esc(costShort)}</span>` : ''}
-          </div>
-          <div class="funding-bar-track">
-            <div class="funding-bar-fill" style="width: ${pct}%">
-              ${pts > 0 ? `<span class="funding-bar-value">${pts} pts</span>` : ''}
-            </div>
-          </div>
-          <div class="funding-bar-goal">${esc((ms.goal || '').substring(0, 40))}</div>
-        </div>`;
-    }).join('');
-
-    document.getElementById('funding-voter-count').textContent = data.fundingVoterCount + ' vote' + (data.fundingVoterCount !== 1 ? 's' : '') + ' in';
-  }
-
-  function updateDone(data) {
-    const container = document.getElementById('final-rankings');
-    const moonshots = data.moonshots;
-    const teamIds = Object.keys(moonshots).map(Number);
-    if (teamIds.length === 0) { container.innerHTML = '<p>No results.</p>'; return; }
-
-    // Sort by funding
-    const sorted = teamIds.map(tid => ({
-      tid,
-      pts: data.fundingTotals[tid] || 0,
-      moonshot: moonshots[tid]
-    })).sort((a, b) => b.pts - a.pts);
-
-    const maxPts = Math.max(1, sorted[0].pts);
-
-    container.innerHTML = sorted.map((item, i) => {
-      const rank = i + 1;
-      const rankClass = rank <= 3 ? 'rank-' + rank : 'rank-other';
-      const pct = (item.pts / maxPts) * 100;
-      return `
-        <div class="funding-bar-row">
-          <div class="ranking-badge ${rankClass}">${rank}</div>
-          <div class="funding-bar-team">Team ${item.tid}</div>
-          <div class="funding-bar-meta">
-            ${getLeverageBadgeHTML(item.moonshot.leverageLevel)}
-          </div>
-          <div class="funding-bar-track">
-            <div class="funding-bar-fill" style="width: ${pct}%; background: ${rank === 1 ? '#C5A033' : rank === 2 ? '#888' : rank === 3 ? '#cd7f32' : '#00694E'}">
-              ${item.pts > 0 ? `<span class="funding-bar-value">${item.pts} pts</span>` : ''}
-            </div>
-          </div>
-          <div class="funding-bar-goal">${esc((item.moonshot.goal || '').substring(0, 50))}</div>
-        </div>`;
-    }).join('');
-  }
-
-  // ── Polling ──
   async function poll() {
     try {
       const res = await fetch('/api/state');
       const data = await res.json();
+      const moonshots = data.moonshots || {};
+      const teamIds = Object.keys(moonshots).map(Number).sort((a, b) => a - b);
+      const numTeams = data.numTeams || 8;
 
-      // Update join counter
-      document.getElementById('join-counter').textContent = data.studentCount + ' student' + (data.studentCount !== 1 ? 's' : '') + ' joined';
+      document.getElementById('counter').textContent = teamIds.length + ' of ' + numTeams + ' teams';
 
-      // Store phase1 data for split detection (numbersFeed has per-student data)
-      phase1Data = data.numbersFeed.map(f => ({ team: f.team, strategy: f.strategy }));
-      numTeamsCache = data.numTeams;
-
-      // Build strategy grid if phase changed or first load
-      if (data.phase !== currentPhase || currentPhase === 0) {
-        buildStrategyGrid(data.numTeams);
-        // Reset phase1Revealed on reset (phase goes back to 1)
-        if (data.phase === 1 && currentPhase !== 0) {
-          phase1Revealed = false;
-        }
-        currentPhase = data.phase;
-        prevFeedLen = 0;
-        showPhase(currentPhase);
+      const grid = document.getElementById('grid');
+      if (teamIds.length === 0) {
+        grid.innerHTML = '<div class="waiting"><div class="icon">&#x1F680;</div><p>Waiting for team moonshots...</p></div>';
+        return;
       }
 
-      if (data.phase === 1) updatePhase1(data);
-      else if (data.phase === 2) updatePhase2(data);
-      else if (data.phase === 3) updatePhase3(data);
-      else if (data.phase >= 4) updateDone(data);
-
+      grid.innerHTML = teamIds.map(tid => {
+        const ms = moonshots[tid];
+        const lvClass = 'lv-' + esc(ms.leverageLevel);
+        return '<div class="card">' +
+          '<div class="team-header">' +
+            '<div class="team-name">Team ' + tid + '</div>' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+              '<span class="leverage-badge ' + lvClass + '">' + esc(ms.leverageLevel) + '</span>' +
+              '<div class="year-badge">' + esc(ms.year) + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="goal">' + esc(ms.goal) + '</div>' +
+          '<div class="cost-line">Who bears the cost? ' + esc(ms.costBearer) + '</div>' +
+          '<div class="key-number">' +
+            '<div class="value">' + esc(ms.targetNumber) + '</div>' +
+            '<div class="metric-label">' + esc(ms.metric) + '</div>' +
+          '</div>' +
+          '<div class="funding-line"><strong>Funding:</strong> ' + esc(ms.funding) + '</div>' +
+        '</div>';
+      }).join('');
     } catch(e) { console.error('Poll error:', e); }
   }
 
   poll();
   setInterval(poll, 2000);
-
-  function esc(text) {
-    if (!text) return '';
-    const d = document.createElement('div');
-    d.textContent = text;
-    return d.innerHTML;
-  }
 })();
 </script>
 </body>

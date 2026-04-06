@@ -158,7 +158,6 @@ app.post('/api/phase1', (req, res) => {
 
 // Phase 2 — Moonshot
 app.post('/api/moonshot', (req, res) => {
-  if (state.phase !== 2) return res.status(400).json({ error: 'Not in Phase 2' });
   const { teamId, year, goal, metric, targetNumber, funding, leverageLevel, costBearer } = req.body;
   if (!teamId || !year || !goal || !metric || !targetNumber || !funding || !leverageLevel || !costBearer) {
     return res.status(400).json({ error: 'All fields required' });
