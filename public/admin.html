@@ -3,131 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin - Strategy Showdown</title>
+<title>Admin - Moonshot Moment</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #F0F0F0; color: #333; min-height: 100vh;
-  }
-  header {
-    background: #00694E; color: white;
-    padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
-  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F0F0F0; color: #333; min-height: 100vh; }
+  header { background: #00694E; color: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
   header h1 { font-size: 1.2rem; }
-  header .badge {
-    background: #C5A033; padding: 4px 12px; border-radius: 20px;
-    font-size: 0.85rem; font-weight: 700;
-  }
+  header .badge { background: #C5A033; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
   .container { max-width: 900px; margin: 0 auto; padding: 20px; }
-  .card {
-    background: white; border-radius: 12px; padding: 20px;
-    margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  }
+  .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .card h2 { font-size: 1.05rem; color: #00694E; margin-bottom: 12px; }
-
-  /* PIN gate */
   #pin-gate { text-align: center; padding: 60px 20px; }
   #pin-gate h2 { font-size: 1.4rem; margin-bottom: 20px; color: #00694E; }
-  #pin-input {
-    font-size: 2rem; text-align: center; width: 200px;
-    padding: 12px; border: 2px solid #ddd; border-radius: 10px;
-    letter-spacing: 8px;
-  }
+  #pin-input { font-size: 2rem; text-align: center; width: 200px; padding: 12px; border: 2px solid #ddd; border-radius: 10px; letter-spacing: 8px; }
   #pin-input:focus { outline: none; border-color: #00694E; }
-
-  /* Controls */
   .controls { display: flex; gap: 12px; flex-wrap: wrap; }
-  .btn {
-    padding: 12px 20px; border: none; border-radius: 8px;
-    font-size: 0.95rem; font-weight: 600; cursor: pointer;
-    transition: all 0.2s; min-height: 44px;
-  }
-  .btn-primary { background: #00694E; color: white; }
-  .btn-primary:hover { background: #005540; }
+  .btn { padding: 12px 20px; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; min-height: 44px; }
   .btn-warning { background: #C5A033; color: white; }
   .btn-warning:hover { background: #b08e28; }
   .btn-danger { background: #c0392b; color: white; }
   .btn-danger:hover { background: #a93226; }
   .btn-outline { background: white; color: #00694E; border: 2px solid #00694E; }
   .btn-outline:hover { background: #f0faf6; }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* Phase indicator */
-  .phase-indicator {
-    display: flex; gap: 0; margin-bottom: 16px; border-radius: 10px; overflow: hidden;
-  }
-  .phase-step {
-    flex: 1; padding: 12px; text-align: center; font-weight: 600;
-    font-size: 0.85rem; background: #eee; color: #999;
-    transition: all 0.3s;
-  }
-  .phase-step.active { background: #00694E; color: white; }
-  .phase-step.completed { background: #C5A033; color: white; }
-
-  /* Phase transition guidance */
-  .phase-guidance {
-    background: #fffbf0; border: 1px solid #C5A033; border-radius: 8px;
-    padding: 12px 16px; margin-bottom: 16px; font-size: 0.88rem;
-    color: #7a5f00; line-height: 1.5;
-  }
-  .phase-guidance strong { color: #C5A033; }
-
-  /* Stats */
-  .stats-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
-  .stat-box {
-    flex: 1; min-width: 120px; background: #f8f8f8;
-    padding: 16px; border-radius: 10px; text-align: center;
-  }
-  .stat-box .number { font-size: 2rem; font-weight: 700; color: #00694E; }
-  .stat-box .label { font-size: 0.8rem; color: #777; margin-top: 4px; }
-
-  /* Team config */
   .team-config { display: flex; align-items: center; gap: 12px; }
-  .team-config select {
-    padding: 8px 12px; font-size: 1rem; border: 2px solid #ddd;
-    border-radius: 8px;
-  }
-
-  /* Submissions table */
+  .team-config select { padding: 8px 12px; font-size: 1rem; border: 2px solid #ddd; border-radius: 8px; }
+  .stat-box { background: #f8f8f8; padding: 20px; border-radius: 10px; text-align: center; }
+  .stat-box .number { font-size: 2.5rem; font-weight: 700; color: #00694E; }
+  .stat-box .label { font-size: 0.85rem; color: #777; margin-top: 4px; }
   table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
   th { text-align: left; padding: 8px; border-bottom: 2px solid #ddd; color: #555; font-size: 0.78rem; text-transform: uppercase; }
   td { padding: 8px; border-bottom: 1px solid #eee; }
   tr:hover td { background: #f8f8f8; }
-
-  /* Split team flag */
-  .split-flag {
-    display: inline-block; background: #e74c3c; color: white;
-    font-size: 0.72rem; font-weight: 700; padding: 2px 6px;
-    border-radius: 4px; margin-left: 6px;
-  }
-
-  /* Leverage badge (admin) */
-  .leverage-badge-sm {
-    display: inline-block; color: white; padding: 2px 7px;
-    border-radius: 8px; font-size: 0.72rem; font-weight: 700;
-  }
+  .leverage-badge-sm { display: inline-block; color: white; padding: 2px 7px; border-radius: 8px; font-size: 0.72rem; font-weight: 700; }
   .lv-parameters { background: #7f8c8d; }
   .lv-feedbacks { background: #2980b9; }
   .lv-design { background: #C5A033; }
   .lv-intent { background: #16a085; }
-
-  /* Self-funding violation note */
-  .violation-note {
-    background: #fef0f0; border: 1px solid #e74c3c; border-radius: 8px;
-    padding: 10px 14px; margin-top: 12px; font-size: 0.82rem; color: #c0392b;
-  }
-
   .hidden { display: none; }
-
-  .emoji-label { font-size: 0.9rem; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Strategy Showdown &mdash; Admin</h1>
-  <span class="badge" id="phase-badge">Phase 1</span>
+  <h1>Moonshot Moment &mdash; Admin</h1>
+  <span class="badge" id="counter-badge">0 moonshots</span>
 </header>
 
 <!-- PIN GATE -->
@@ -141,22 +60,10 @@
 
 <!-- ADMIN PANEL -->
 <div id="admin-panel" class="container hidden">
-  <!-- Phase indicator -->
-  <div class="phase-indicator">
-    <div class="phase-step" id="pi-1">1. Place Your Bet</div>
-    <div class="phase-step" id="pi-2">2. Moonshot</div>
-    <div class="phase-step" id="pi-3">3. Fund It</div>
-    <div class="phase-step" id="pi-4">Done</div>
-  </div>
 
-  <!-- Phase transition guidance -->
-  <div class="phase-guidance" id="phase-guidance"></div>
-
-  <!-- Controls -->
   <div class="card">
     <h2>Session Controls</h2>
     <div class="controls">
-      <button class="btn btn-primary" id="btn-advance">Advance to Next Phase &#x25B6;</button>
       <button class="btn btn-warning" id="btn-dummy">Load Dummy Data</button>
       <button class="btn btn-danger" id="btn-reset">Reset All</button>
     </div>
@@ -173,53 +80,27 @@
     </div>
   </div>
 
-  <!-- Student Links -->
   <div class="card">
     <h2>Student Links</h2>
     <div style="font-size:0.9rem;">
       <strong>Moonshot page:</strong>
       <a id="moonshot-link" href="/moonshot.html" target="_blank" style="color:#00694E;font-weight:600;"></a>
-      <div style="margin-top:6px;font-size:0.82rem;color:#777;">Share this link when you're ready for Phase 2. Set phase to 2 first.</div>
+      <br><br>
+      <strong>Display page:</strong>
+      <a id="display-link" href="/display.html" target="_blank" style="color:#00694E;font-weight:600;"></a>
     </div>
   </div>
 
-  <!-- Stats -->
-  <div class="stats-row">
-    <div class="stat-box"><div class="number" id="stat-students">0</div><div class="label">Students Joined</div></div>
-    <div class="stat-box"><div class="number" id="stat-p1">0</div><div class="label">Phase 1 Bets</div></div>
-    <div class="stat-box"><div class="number" id="stat-moonshots">0</div><div class="label">Moonshots</div></div>
-    <div class="stat-box"><div class="number" id="stat-votes">0</div><div class="label">Funding Votes</div></div>
+  <div class="stat-box" style="margin-bottom:16px;">
+    <div class="number" id="stat-moonshots">0</div>
+    <div class="label">Moonshots Submitted (of <span id="stat-teams">8</span> teams)</div>
   </div>
 
-  <!-- Submissions -->
-  <div class="card" id="section-students">
-    <h2>Students</h2>
-    <table><thead><tr><th>Name</th><th>Team</th><th>ID</th></tr></thead><tbody id="tbl-students"></tbody></table>
-  </div>
-
-  <div class="card" id="section-p1">
-    <h2>Phase 1 Submissions</h2>
-    <div id="split-teams-summary"></div>
-    <table>
-      <thead><tr><th>Name</th><th>Team</th><th>Strategy</th><th>Energy</th><th>Cost</th><th>Impact</th></tr></thead>
-      <tbody id="tbl-p1"></tbody>
-    </table>
-  </div>
-
-  <div class="card" id="section-moonshots">
+  <div class="card">
     <h2>Moonshot Submissions</h2>
     <table>
       <thead><tr><th>Team</th><th>Year</th><th>Goal</th><th>Leverage</th><th>Cost Bearer</th><th>Metric</th><th>Target</th><th>Funding</th></tr></thead>
       <tbody id="tbl-moonshots"></tbody>
-    </table>
-  </div>
-
-  <div class="card" id="section-funding">
-    <h2>Funding Votes</h2>
-    <div id="self-funding-violations"></div>
-    <table>
-      <thead><tr><th>Student</th><th>Allocations</th></tr></thead>
-      <tbody id="tbl-funding"></tbody>
     </table>
   </div>
 </div>
@@ -229,15 +110,8 @@
   let pin = '';
   let authenticated = false;
 
-  const $gate = document.getElementById('pin-gate');
-  const $panel = document.getElementById('admin-panel');
-
-  // PIN entry
   document.getElementById('pin-input').addEventListener('input', function() {
-    if (this.value.length === 4) {
-      pin = this.value;
-      tryAuth();
-    }
+    if (this.value.length === 4) { pin = this.value; tryAuth(); }
   });
 
   async function tryAuth() {
@@ -245,12 +119,13 @@
       const res = await fetch('/admin/state?pin=' + encodeURIComponent(pin));
       if (res.ok) {
         authenticated = true;
-        $gate.classList.add('hidden');
-        $panel.classList.remove('hidden');
-        // Set student link URLs
+        document.getElementById('pin-gate').classList.add('hidden');
+        document.getElementById('admin-panel').classList.remove('hidden');
         const base = window.location.origin;
         document.getElementById('moonshot-link').textContent = base + '/moonshot.html';
         document.getElementById('moonshot-link').href = base + '/moonshot.html';
+        document.getElementById('display-link').textContent = base + '/display.html';
+        document.getElementById('display-link').href = base + '/display.html';
         poll();
         setInterval(poll, 2000);
       } else {
@@ -260,107 +135,29 @@
     } catch(e) { alert('Connection error'); }
   }
 
-  // Controls
-  document.getElementById('btn-advance').addEventListener('click', async () => {
-    if (!confirm('Advance to next phase?')) return;
-    const btn = document.getElementById('btn-advance');
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Advancing...';
-    const startTime = Date.now();
-    try {
-      await fetch('/admin/advance-phase', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin })
-      });
-      poll();
-    } catch(e) { /* silent */ }
-    // Ensure minimum 2-second delay before re-enabling
-    const elapsed = Date.now() - startTime;
-    const remaining = Math.max(0, 2000 - elapsed);
-    setTimeout(() => {
-      btn.textContent = originalText;
-      btn.disabled = false;
-      // Re-check if we're at phase 4 (done)
-      poll();
-    }, remaining);
-  });
-
   document.getElementById('btn-dummy').addEventListener('click', async () => {
     if (!confirm('Load dummy data? This will reset current data.')) return;
-    await fetch('/admin/load-dummy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin })
-    });
+    await fetch('/admin/load-dummy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) });
     poll();
   });
 
   document.getElementById('btn-reset').addEventListener('click', async () => {
     if (!confirm('Reset ALL data? This cannot be undone.')) return;
-    if (!confirm('Are you really sure?')) return;
-    await fetch('/admin/reset', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin })
-    });
+    await fetch('/admin/reset', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) });
     poll();
   });
 
   document.getElementById('btn-set-teams').addEventListener('click', async () => {
     const n = document.getElementById('team-count').value;
-    await fetch('/admin/set-teams', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin, numTeams: parseInt(n) })
-    });
+    await fetch('/admin/set-teams', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin, numTeams: parseInt(n) }) });
     poll();
   });
 
-  const strategyEmoji = {
-    'Redesign the Machine': '\u{1F3D7}\u{FE0F}',
-    'Change the Fuel': '\u26A1',
-    'Tune the Engine': '\u{1F527}'
-  };
-
-  const leverageClassMap = {
-    'Parameters': 'lv-parameters',
-    'Feedbacks': 'lv-feedbacks',
-    'Design': 'lv-design',
-    'Intent': 'lv-intent'
-  };
-
-  const phaseGuidanceText = {
-    1: '<strong>Phase 1 in progress.</strong> Students are placing their bets. When ready, advance to Phase 2.',
-    2: '<strong>Phase 2 in progress.</strong> Teams are submitting moonshots. Do the leverage points discussion, then advance to Phase 3.',
-    3: '<strong>Phase 3 in progress.</strong> Students are allocating funding. When voting is complete, advance to reveal final rankings.',
-    4: '<strong>Session complete.</strong> Final funding rankings are shown on the display.'
-  };
-
-  // Detect split teams from phase1 data
-  function detectSplitTeams(phase1, numTeams) {
-    const teamVotes = {};
-    for (let t = 1; t <= numTeams; t++) teamVotes[t] = {};
-    phase1.forEach(s => {
-      if (!teamVotes[s.team]) teamVotes[s.team] = {};
-      teamVotes[s.team][s.strategy] = (teamVotes[s.team][s.strategy] || 0) + 1;
-    });
-    const splits = [];
-    for (let t = 1; t <= numTeams; t++) {
-      const strats = Object.keys(teamVotes[t]).filter(k => teamVotes[t][k] > 0);
-      if (strats.length > 1) {
-        const breakdown = strats.map(s => teamVotes[t][s] + ' ' + s).join(', ');
-        splits.push({ team: t, breakdown });
-      }
-    }
-    return splits;
-  }
+  const leverageClassMap = { 'Parameters': 'lv-parameters', 'Feedbacks': 'lv-feedbacks', 'Design': 'lv-design', 'Intent': 'lv-intent' };
 
   function getLeverageBadge(level) {
     if (!level) return '';
-    const cls = leverageClassMap[level] || 'lv-parameters';
-    return `<span class="leverage-badge-sm ${cls}">${esc(level)}</span>`;
+    return `<span class="leverage-badge-sm ${leverageClassMap[level] || 'lv-parameters'}">${esc(level)}</span>`;
   }
 
   async function poll() {
@@ -369,124 +166,25 @@
       const res = await fetch('/admin/state?pin=' + encodeURIComponent(pin));
       const data = await res.json();
 
-      // Phase badge & indicator
-      const phaseNames = { 1: 'Phase 1', 2: 'Phase 2', 3: 'Phase 3', 4: 'Done' };
-      document.getElementById('phase-badge').textContent = phaseNames[data.phase] || 'Phase ' + data.phase;
-
-      for (let i = 1; i <= 4; i++) {
-        const el = document.getElementById('pi-' + i);
-        el.className = 'phase-step';
-        if (i === data.phase) el.classList.add('active');
-        else if (i < data.phase) el.classList.add('completed');
-      }
-
-      // Phase guidance
-      const guidanceEl = document.getElementById('phase-guidance');
-      if (phaseGuidanceText[data.phase]) {
-        guidanceEl.innerHTML = phaseGuidanceText[data.phase];
-        guidanceEl.style.display = '';
-      } else {
-        guidanceEl.style.display = 'none';
-      }
-
-      // Disable advance if done
-      document.getElementById('btn-advance').disabled = (data.phase >= 4);
-
-      // Set team count select
+      const count = Object.keys(data.moonshots).length;
+      document.getElementById('counter-badge').textContent = count + ' moonshot' + (count !== 1 ? 's' : '');
+      document.getElementById('stat-moonshots').textContent = count;
+      document.getElementById('stat-teams').textContent = data.numTeams;
       document.getElementById('team-count').value = data.numTeams;
 
-      // Stats
-      document.getElementById('stat-students').textContent = data.students.length;
-      document.getElementById('stat-p1').textContent = data.phase1.length;
-      document.getElementById('stat-moonshots').textContent = Object.keys(data.moonshots).length;
-      document.getElementById('stat-votes').textContent = data.funding.length;
-
-      // Show/hide sections based on phase
-      document.getElementById('section-students').style.display = '';
-      document.getElementById('section-p1').style.display = data.phase >= 1 ? '' : 'none';
-      document.getElementById('section-moonshots').style.display = data.phase >= 2 ? '' : 'none';
-      document.getElementById('section-funding').style.display = data.phase >= 3 ? '' : 'none';
-
-      // Students table
-      const tblS = document.getElementById('tbl-students');
-      tblS.innerHTML = data.students.map(s =>
-        `<tr><td>${esc(s.name)}</td><td>Team ${s.team}</td><td>${s.id}</td></tr>`
-      ).join('');
-
-      // Phase 1 table with split detection
-      const splitTeams = detectSplitTeams(data.phase1, data.numTeams);
-      const splitSummaryEl = document.getElementById('split-teams-summary');
-      if (splitTeams.length > 0) {
-        splitSummaryEl.innerHTML = '<div style="background:#fef0f0;border:1px solid #e74c3c;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:0.85rem;">' +
-          '<strong style="color:#e74c3c;">Split Teams (cold-call targets):</strong><br>' +
-          splitTeams.map(s =>
-            `Team ${s.team}: <span class="split-flag">SPLIT</span> (${esc(s.breakdown)})`
-          ).join('<br>') +
-          '</div>';
-      } else {
-        splitSummaryEl.innerHTML = '';
-      }
-
-      // Build a set of split team numbers for row highlighting
-      const splitTeamNums = new Set(splitTeams.map(s => s.team));
-
-      const tblP1 = document.getElementById('tbl-p1');
-      tblP1.innerHTML = data.phase1.map(s => {
-        const splitTag = splitTeamNums.has(s.team) ? ' <span class="split-flag">SPLIT</span>' : '';
-        return `<tr><td>${esc(s.name)}</td><td>Team ${s.team}${splitTag}</td>` +
-          `<td><span class="emoji-label">${strategyEmoji[s.strategy] || ''} ${esc(s.strategy)}</span></td>` +
-          `<td>${esc(s.energyNumber)}</td><td>${esc(s.costNumber)}</td><td>${esc(s.impactNumber)}</td></tr>`;
-      }).join('');
-
-      // Moonshots table with leverage level and cost bearer
-      const tblM = document.getElementById('tbl-moonshots');
-      tblM.innerHTML = Object.values(data.moonshots).map(m =>
+      const tbl = document.getElementById('tbl-moonshots');
+      tbl.innerHTML = Object.values(data.moonshots).map(m =>
         `<tr><td>Team ${m.teamId}</td><td>${m.year}</td>` +
         `<td>${esc(m.goal)}</td>` +
         `<td>${getLeverageBadge(m.leverageLevel)}</td>` +
-        `<td style="color:#d4820a;font-size:0.82rem;">${esc(m.costBearer || '')}</td>` +
+        `<td style="color:#c0392b;font-size:0.82rem;">${esc(m.costBearer || '')}</td>` +
         `<td>${esc(m.metric)}</td>` +
         `<td>${esc(m.targetNumber)}</td><td>${esc(m.funding)}</td></tr>`
-      ).join('');
-
-      // Funding table + self-funding cap violation notes
-      const violationsEl = document.getElementById('self-funding-violations');
-      const violations = [];
-      const tblF = document.getElementById('tbl-funding');
-      tblF.innerHTML = data.funding.map(f => {
-        const student = data.students.find(s => s.id === f.studentId);
-        const studentTeam = student ? String(student.team) : null;
-        const allocs = Object.entries(f.allocations)
-          .filter(([, v]) => v > 0)
-          .map(([t, v]) => {
-            // Flag if self-funding exceeded (server blocks >25, but note attempted)
-            if (t === studentTeam && v > 25) {
-              violations.push({ name: student ? student.name : f.studentId, team: t, amount: v });
-            }
-            return `Team ${t}: ${v}`;
-          })
-          .join(', ');
-        return `<tr><td>${esc(student ? student.name : f.studentId)}</td><td>${allocs}</td></tr>`;
-      }).join('');
-
-      if (violations.length > 0) {
-        violationsEl.innerHTML = '<div class="violation-note">' +
-          '<strong>Self-funding cap violations detected:</strong> ' +
-          violations.map(v => `${esc(v.name)} (Team ${v.team}) tried ${v.amount} pts`).join('; ') +
-          '. The server blocks allocations over 25 pts to own team, but students may report confusion.' +
-          '</div>';
-      } else {
-        violationsEl.innerHTML = '';
-      }
-
+      ).join('') || '<tr><td colspan="8" style="text-align:center;color:#999;padding:20px;">No submissions yet</td></tr>';
     } catch(e) { /* silent */ }
   }
 
-  function esc(text) {
-    const d = document.createElement('div');
-    d.textContent = text;
-    return d.innerHTML;
-  }
+  function esc(text) { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
 })();
 </script>
 </body>
