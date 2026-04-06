@@ -157,6 +157,7 @@
     <h2>Session Controls</h2>
     <div class="controls">
       <button class="btn btn-primary" id="btn-advance">Advance to Next Phase &#x25B6;</button>
+      <button class="btn btn-warning" id="btn-dummy">Load Dummy Data</button>
       <button class="btn btn-danger" id="btn-reset">Reset All</button>
     </div>
     <div style="margin-top:16px;">
@@ -270,6 +271,16 @@
       // Re-check if we're at phase 4 (done)
       poll();
     }, remaining);
+  });
+
+  document.getElementById('btn-dummy').addEventListener('click', async () => {
+    if (!confirm('Load dummy data? This will reset current data.')) return;
+    await fetch('/admin/load-dummy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin })
+    });
+    poll();
   });
 
   document.getElementById('btn-reset').addEventListener('click', async () => {

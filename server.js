@@ -304,6 +304,115 @@ app.post('/admin/reset', (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/admin/load-dummy', (req, res) => {
+  if (!checkPin(req.body.pin)) return res.status(403).json({ error: 'Invalid PIN' });
+
+  // Reset first
+  const teams = state.numTeams;
+  state = freshState();
+  state.numTeams = teams;
+  nextId = 1;
+
+  const strategies = ['Redesign the Machine', 'Change the Fuel', 'Tune the Engine'];
+  const leverageLevels = ['Parameters', 'Feedbacks', 'Design', 'Intent'];
+  const firstNames = [
+    'Alex', 'Jordan', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Quinn', 'Avery',
+    'Cameron', 'Drew', 'Emerson', 'Finley', 'Harper', 'Kai', 'Logan', 'Noel',
+    'Parker', 'Reese', 'Sage', 'Skyler', 'Blake', 'Dakota', 'Ellis', 'Frankie',
+    'Gray', 'Hayden', 'Indigo', 'Jamie', 'Kerry', 'Lane', 'Micah', 'Nico'
+  ];
+
+  const perTeam = 3;
+  let nameIdx = 0;
+
+  // Create students and phase1 bets
+  for (let t = 1; t <= state.numTeams; t++) {
+    for (let i = 0; i < perTeam; i++) {
+      const id = genId();
+      const name = firstNames[nameIdx++ % firstNames.length];
+      state.students.push({ id, name, team: t });
+
+      const strategy = strategies[(t + i) % 3];
+      state.phase1.push({
+        studentId: id, name, team: t, strategy,
+        energyNumber: String(Math.floor(Math.random() * 50) + 10) + '%',
+        costNumber: '$' + String(Math.floor(Math.random() * 900) + 100) + 'M',
+        impactNumber: String(Math.floor(Math.random() * 40) + 5) + ' MT CO2'
+      });
+    }
+
+    // Moonshot per team
+    const goals = [
+      'Achieve net-zero across all data center operations',
+      'Power 100% of operations with on-site renewables',
+      'Eliminate water usage in cooling systems entirely',
+      'Make all hardware fully circular and recyclable',
+      'Remove more carbon than emitted across supply chain',
+      'Deploy modular nuclear reactors at every campus',
+      'Reach carbon-negative status by end of decade',
+      'Zero-waste manufacturing for all server components'
+    ];
+    const costBearers = ['Microsoft shareholders', 'Cloud customers via pricing', 'Joint venture partners', 'Government subsidies', 'Industry consortium', 'Internal R&D budget', 'Carbon credit revenue', 'Green bond investors'];
+    const metrics = ['MT CO2 removed', '% renewable energy', 'gallons water saved', 'tons e-waste diverted', 'MWh clean energy generated', 'carbon intensity per workload', 'PUE ratio improvement', 'supply chain emissions reduction'];
+
+    state.moonshots[t] = {
+      teamId: t,
+      year: String(2028 + Math.floor(Math.random() * 7)),
+      goal: goals[(t - 1) % goals.length],
+      metric: metrics[(t - 1) % metrics.length],
+      targetNumber: String(Math.floor(Math.random() * 90) + 10) + '%',
+      funding: '$' + String(Math.floor(Math.random() * 9) + 1) + 'B',
+      leverageLevel: leverageLevels[(t - 1) % 4],
+      costBearer: costBearers[(t - 1) % costBearers.length]
+    };
+
+    // Budget per team
+    const dominant = 60 + Math.floor(Math.random() * 21); // 60-80
+    const remainder = 100 - dominant;
+    const second = Math.floor(Math.random() * (remainder + 1));
+    const third = remainder - second;
+    const vals = [dominant, second, third].sort(() => Math.random() - 0.5);
+    state.budgets[t] = { teamId: t, modular: vals[0], renewable: vals[1], optimize: vals[2] };
+  }
+
+  // Funding votes
+  for (const student of state.students) {
+    const allocations = {};
+    let remaining = 100;
+    const ownTeam = String(student.team);
+
+    // Give own team 10-25 points
+    const selfPts = Math.floor(Math.random() * 16) + 10;
+    allocations[ownTeam] = selfPts;
+    remaining -= selfPts;
+
+    // Distribute rest randomly across other teams
+    const otherTeams = [];
+    for (let t = 1; t <= state.numTeams; t++) {
+      if (String(t) !== ownTeam) otherTeams.push(String(t));
+    }
+    // Pick 2-4 other teams to fund
+    const numToFund = Math.min(otherTeams.length, Math.floor(Math.random() * 3) + 2);
+    const funded = otherTeams.sort(() => Math.random() - 0.5).slice(0, numToFund);
+
+    for (let i = 0; i < funded.length; i++) {
+      if (i === funded.length - 1) {
+        allocations[funded[i]] = remaining;
+      } else {
+        const pts = Math.floor(Math.random() * (remaining - (funded.length - i - 1))) + 1;
+        allocations[funded[i]] = pts;
+        remaining -= pts;
+      }
+    }
+
+    state.funding.push({ studentId: student.id, allocations });
+  }
+
+  state.phase = 3;
+  saveState();
+  res.json({ ok: true, students: state.students.length, teams: state.numTeams });
+});
+
 app.get('/admin/state', (req, res) => {
   if (!checkPin(req.query.pin)) return res.status(403).json({ error: 'Invalid PIN' });
   res.json(state);
