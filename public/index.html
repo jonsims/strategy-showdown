@@ -1364,9 +1364,19 @@
     }
   }
 
+  function clearSession() {
+    studentId = null;
+    studentName = '';
+    studentTeam = null;
+    phase1Submitted = false;
+    moonshotSubmitted = false;
+    fundingSubmitted = false;
+    sessionStorage.removeItem('ss-session');
+  }
+
   document.getElementById('switch-user').addEventListener('click', function(e) {
     e.preventDefault();
-    sessionStorage.removeItem('ss-session');
+    clearSession();
     location.reload();
   });
 
@@ -1407,7 +1417,10 @@
         })
       });
       const data = await res.json();
-      if (data.error) { alert(data.error); btn.disabled = false; btn.textContent = 'Submit My Bet'; return; }
+      if (data.error) {
+        if (res.status === 404) { clearSession(); renderScreen(); return; }
+        alert(data.error); btn.disabled = false; btn.textContent = 'Submit My Bet'; return;
+      }
       phase1Submitted = true;
       saveSession();
       renderScreen();
@@ -1465,7 +1478,10 @@
         })
       });
       const data = await res.json();
-      if (data.error) { alert(data.error); btn.disabled = false; btn.textContent = 'Submit Moonshot'; return; }
+      if (data.error) {
+        if (res.status === 404) { clearSession(); renderScreen(); return; }
+        alert(data.error); btn.disabled = false; btn.textContent = 'Submit Moonshot'; return;
+      }
       moonshotSubmitted = true;
       saveSession();
       renderScreen();
@@ -1567,7 +1583,10 @@
         body: JSON.stringify({ studentId, allocations })
       });
       const data = await res.json();
-      if (data.error) { alert(data.error); btn.disabled = false; btn.textContent = 'Lock In My Votes'; return; }
+      if (data.error) {
+        if (res.status === 404) { clearSession(); renderScreen(); return; }
+        alert(data.error); btn.disabled = false; btn.textContent = 'Lock In My Votes'; return;
+      }
       fundingSubmitted = true;
       saveSession();
       renderScreen();
@@ -1744,6 +1763,11 @@
     try {
       const res = await fetch('/api/state');
       const data = await res.json();
+      // Detect server reset: we have a session but server has no students
+      if (studentId && data.studentCount === 0) {
+        clearSession();
+      }
+
       const prevPhase = currentPhase;
       currentPhase = data.phase;
       numTeams = data.numTeams;
