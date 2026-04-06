@@ -1,0 +1,12 @@
+{
+  "name": "strategy-showdown",
+  "version": "1.0.0",
+  "description": "Classroom case discussion app for Microsoft sustainability strategies",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

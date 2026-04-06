@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Strategy Showdown</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F0F0F0; color: #333;
+    min-height: 100dvh;
+    display: flex; flex-direction: column;
+  }
+  header {
+    background: #00694E; color: white;
+    padding: 16px 20px; text-align: center;
+  }
+  header h1 { font-size: 1.3rem; font-weight: 700; }
+  header .subtitle { font-size: 0.85rem; opacity: 0.85; margin-top: 2px; }
+  .container { flex: 1; padding: 16px; max-width: 500px; margin: 0 auto; width: 100%; }
+
+  /* Cards */
+  .card {
+    background: white; border-radius: 12px; padding: 20px;
+    margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .card h2 { font-size: 1.1rem; color: #00694E; margin-bottom: 12px; }
+  .card h3 { font-size: 0.95rem; color: #555; margin-bottom: 8px; }
+
+  /* Forms */
+  label { display: block; font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 4px; margin-top: 12px; }
+  label:first-child { margin-top: 0; }
+  input[type="text"], textarea, select {
+    width: 100%; padding: 12px; font-size: 1rem;
+    border: 2px solid #ddd; border-radius: 8px;
+    background: #fafafa; transition: border-color 0.2s;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: none; border-color: #00694E; background: white;
+  }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* Strategy selector */
+  .strategy-options { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+  .strategy-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; border: 2px solid #ddd; border-radius: 10px;
+    background: white; cursor: pointer; transition: all 0.2s;
+    font-size: 0.95rem; text-align: left;
+    min-height: 52px;
+  }
+  .strategy-btn:hover { border-color: #00694E; background: #f0faf6; }
+  .strategy-btn.selected { border-color: #00694E; background: #e6f5ef; font-weight: 600; }
+  .strategy-btn .emoji { font-size: 1.5rem; flex-shrink: 0; }
+  .strategy-btn .label { line-height: 1.3; }
+  .strategy-btn .sublabel { font-size: 0.78rem; color: #777; font-weight: 400; display: block; }
+
+  /* Team grid */
+  .team-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px;
+  }
+  .team-btn {
+    padding: 14px 8px; border: 2px solid #ddd; border-radius: 10px;
+    background: white; cursor: pointer; font-size: 1rem; font-weight: 600;
+    transition: all 0.2s; min-height: 48px;
+  }
+  .team-btn:hover { border-color: #00694E; }
+  .team-btn.selected { border-color: #00694E; background: #00694E; color: white; }
+
+  /* Submit button */
+  .btn-submit {
+    width: 100%; padding: 16px; margin-top: 20px;
+    background: #00694E; color: white; border: none; border-radius: 10px;
+    font-size: 1.05rem; font-weight: 700; cursor: pointer;
+    transition: background 0.2s; min-height: 52px;
+  }
+  .btn-submit:hover { background: #005540; }
+  .btn-submit:disabled { background: #aaa; cursor: not-allowed; }
+
+  /* Status */
+  .status-bar {
+    background: #C5A033; color: white; text-align: center;
+    padding: 10px; font-size: 0.9rem; font-weight: 600;
+  }
+  .success-msg {
+    text-align: center; padding: 40px 20px; color: #00694E;
+  }
+  .success-msg .check { font-size: 3rem; margin-bottom: 12px; }
+  .success-msg h2 { margin-bottom: 8px; }
+  .success-msg p { color: #666; }
+
+  .waiting-msg { text-align: center; padding: 40px 20px; color: #777; }
+  .waiting-msg .icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+  /* Phase 3 funding inputs */
+  .funding-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid #eee;
+  }
+  .funding-row:last-child { border-bottom: none; }
+  .funding-team { font-weight: 700; color: #00694E; min-width: 60px; font-size: 0.95rem; }
+  .funding-goal { flex: 1; font-size: 0.82rem; color: #555; line-height: 1.3; }
+  .funding-input {
+    width: 70px; text-align: center; padding: 10px 4px;
+    font-size: 1.1rem; font-weight: 700; border: 2px solid #ddd;
+    border-radius: 8px; flex-shrink: 0;
+  }
+  .funding-total {
+    text-align: right; padding: 12px 0; font-weight: 700;
+    font-size: 1.05rem; margin-top: 8px;
+  }
+  .funding-total.valid { color: #00694E; }
+  .funding-total.invalid { color: #c0392b; }
+
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Strategy Showdown</h1>
+  <div class="subtitle">Microsoft Sustainability Case</div>
+</header>
+
+<!-- JOIN SCREEN -->
+<div id="screen-join" class="container">
+  <div class="card">
+    <h2>Join the Session</h2>
+    <label for="join-name">Your Name</label>
+    <input type="text" id="join-name" placeholder="First Last" autocomplete="off">
+    <label>Your Team</label>
+    <div class="team-grid" id="team-grid"></div>
+    <button class="btn-submit" id="btn-join" disabled>Join</button>
+  </div>
+</div>
+
+<!-- PHASE 1 -->
+<div id="screen-phase1" class="container hidden">
+  <div class="status-bar" style="border-radius:10px;margin-bottom:16px;">Phase 1: Place Your Bet</div>
+  <div class="card">
+    <h2>Which strategy should Microsoft prioritize?</h2>
+    <div class="strategy-options" id="strategy-options">
+      <button class="strategy-btn" data-strategy="Redesign the Machine">
+        <span class="emoji">&#x1F3D7;&#xFE0F;</span>
+        <span class="label">Redesign the Machine<span class="sublabel">Modular Data Centers</span></span>
+      </button>
+      <button class="strategy-btn" data-strategy="Change the Fuel">
+        <span class="emoji">&#x26A1;</span>
+        <span class="label">Change the Fuel<span class="sublabel">Renewable Energy</span></span>
+      </button>
+      <button class="strategy-btn" data-strategy="Tune the Engine">
+        <span class="emoji">&#x1F527;</span>
+        <span class="label">Tune the Engine<span class="sublabel">Optimize Existing</span></span>
+      </button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Back it up with numbers from the case</h2>
+    <label for="p1-energy">Energy / Emissions Figure</label>
+    <input type="text" id="p1-energy" placeholder='e.g. "PUE 1.05 vs 1.57"'>
+    <label for="p1-cost">Cost Figure</label>
+    <input type="text" id="p1-cost" placeholder='e.g. "30-50% lower capex"'>
+    <label for="p1-impact">Impact Metric</label>
+    <input type="text" id="p1-impact" placeholder='e.g. "33% CO2 reduction"'>
+    <button class="btn-submit" id="btn-phase1" disabled>Submit My Bet</button>
+  </div>
+</div>
+
+<!-- PHASE 1 DONE -->
+<div id="screen-phase1-done" class="container hidden">
+  <div class="card success-msg">
+    <div class="check">&#x2705;</div>
+    <h2>Bet Placed!</h2>
+    <p>Your strategy pick and numbers have been recorded. Watch the display to see how the class voted.</p>
+  </div>
+</div>
+
+<!-- PHASE 2 -->
+<div id="screen-phase2" class="container hidden">
+  <div class="status-bar" style="border-radius:10px;margin-bottom:16px;">Phase 2: Moonshot Moment</div>
+  <div id="moonshot-form-area">
+    <div class="card">
+      <h2>Team <span id="my-team-num"></span> Moonshot</h2>
+      <h3>One submission per team &mdash; make it bold!</h3>
+      <label for="ms-year">Target Year</label>
+      <select id="ms-year">
+        <option value="">Select year...</option>
+        <option>2027</option>
+        <option>2028</option>
+        <option>2029</option>
+        <option>2030</option>
+        <option>2035</option>
+      </select>
+      <label for="ms-goal">Goal Statement <span style="font-weight:400;color:#999">(280 chars max)</span></label>
+      <textarea id="ms-goal" maxlength="280" placeholder="Your team's moonshot goal..."></textarea>
+      <label for="ms-metric">Key Metric</label>
+      <input type="text" id="ms-metric" placeholder='e.g. "PUE 1.10 or below"'>
+      <label for="ms-target">Target Number</label>
+      <input type="text" id="ms-target" placeholder='e.g. "zero net freshwater"'>
+      <label for="ms-funding">Funding Mechanism</label>
+      <input type="text" id="ms-funding" placeholder='e.g. "15% of Azure revenue growth"'>
+      <button class="btn-submit" id="btn-moonshot" disabled>Submit Moonshot</button>
+    </div>
+  </div>
+  <div id="moonshot-done" class="hidden">
+    <div class="card success-msg">
+      <div class="check">&#x1F680;</div>
+      <h2>Moonshot Launched!</h2>
+      <p>Your team's proposal is on the board. Watch the display!</p>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 3 -->
+<div id="screen-phase3" class="container hidden">
+  <div class="status-bar" style="border-radius:10px;margin-bottom:16px;">Phase 3: Fund It or Kill It</div>
+  <div id="funding-form-area">
+    <div class="card">
+      <h2>Allocate 100 Budget Points</h2>
+      <h3>Distribute across team moonshots. Zero is fine &mdash; be honest.</h3>
+      <div id="funding-rows"></div>
+      <div class="funding-total" id="funding-total">Total: 0 / 100</div>
+      <button class="btn-submit" id="btn-fund" disabled>Lock In My Votes</button>
+    </div>
+  </div>
+  <div id="funding-done" class="hidden">
+    <div class="card success-msg">
+      <div class="check">&#x1F4B0;</div>
+      <h2>Votes Locked!</h2>
+      <p>Your budget allocation has been recorded. Watch the funding bars on the display!</p>
+    </div>
+  </div>
+</div>
+
+<!-- WAITING SCREENS -->
+<div id="screen-waiting" class="container hidden">
+  <div class="card waiting-msg">
+    <div class="icon">&#x23F3;</div>
+    <h2>Waiting for next phase...</h2>
+    <p>The professor will advance the session shortly.</p>
+  </div>
+</div>
+
+<div id="screen-done" class="container hidden">
+  <div class="card success-msg">
+    <div class="check">&#x1F3C6;</div>
+    <h2>Session Complete!</h2>
+    <p>Thanks for participating in the Strategy Showdown. Check the display for final results.</p>
+  </div>
+</div>
+
+<script>
+(function() {
+  // State
+  let studentId = null;
+  let studentName = '';
+  let studentTeam = null;
+  let selectedStrategy = null;
+  let currentPhase = 1;
+  let numTeams = 8;
+  let phase1Submitted = false;
+  let moonshotSubmitted = false;
+  let fundingSubmitted = false;
+
+  // Restore session
+  try {
+    const saved = JSON.parse(sessionStorage.getItem('ss-session'));
+    if (saved) {
+      studentId = saved.studentId;
+      studentName = saved.studentName;
+      studentTeam = saved.studentTeam;
+      phase1Submitted = saved.phase1Submitted || false;
+      moonshotSubmitted = saved.moonshotSubmitted || false;
+      fundingSubmitted = saved.fundingSubmitted || false;
+    }
+  } catch(e) {}
+
+  function saveSession() {
+    sessionStorage.setItem('ss-session', JSON.stringify({
+      studentId, studentName, studentTeam,
+      phase1Submitted, moonshotSubmitted, fundingSubmitted
+    }));
+  }
+
+  // Elements
+  const $join = document.getElementById('screen-join');
+  const $p1 = document.getElementById('screen-phase1');
+  const $p1done = document.getElementById('screen-phase1-done');
+  const $p2 = document.getElementById('screen-phase2');
+  const $p3 = document.getElementById('screen-phase3');
+  const $waiting = document.getElementById('screen-waiting');
+  const $done = document.getElementById('screen-done');
+
+  function hideAll() {
+    [$join, $p1, $p1done, $p2, $p3, $waiting, $done].forEach(el => el.classList.add('hidden'));
+  }
+
+  function show(el) { el.classList.remove('hidden'); }
+
+  // ── Build team grid ─────────────────────────────────────────────
+  function buildTeamGrid(n) {
+    const grid = document.getElementById('team-grid');
+    grid.innerHTML = '';
+    for (let i = 1; i <= n; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'team-btn';
+      btn.textContent = i;
+      btn.dataset.team = i;
+      btn.addEventListener('click', () => {
+        grid.querySelectorAll('.team-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        checkJoinReady();
+      });
+      grid.appendChild(btn);
+    }
+  }
+
+  // ── Join ─────────────────────────────────────────────────────────
+  function checkJoinReady() {
+    const name = document.getElementById('join-name').value.trim();
+    const team = document.querySelector('.team-btn.selected');
+    document.getElementById('btn-join').disabled = !(name && team);
+  }
+
+  document.getElementById('join-name').addEventListener('input', checkJoinReady);
+
+  document.getElementById('btn-join').addEventListener('click', async () => {
+    const name = document.getElementById('join-name').value.trim();
+    const team = document.querySelector('.team-btn.selected').dataset.team;
+    const btn = document.getElementById('btn-join');
+    btn.disabled = true; btn.textContent = 'Joining...';
+    try {
+      const res = await fetch('/api/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, team: parseInt(team) })
+      });
+      const data = await res.json();
+      if (data.error) { alert(data.error); btn.disabled = false; btn.textContent = 'Join'; return; }
+      studentId = data.studentId;
+      studentName = data.name;
+      studentTeam = data.team;
+      saveSession();
+      renderScreen();
+    } catch(e) {
+      alert('Connection error. Try again.');
+      btn.disabled = false; btn.textContent = 'Join';
+    }
+  });
+
+  // ── Phase 1 ──────────────────────────────────────────────────────
+  document.querySelectorAll('.strategy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.strategy-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedStrategy = btn.dataset.strategy;
+      checkPhase1Ready();
+    });
+  });
+
+  function checkPhase1Ready() {
+    const e = document.getElementById('p1-energy').value.trim();
+    const c = document.getElementById('p1-cost').value.trim();
+    const i = document.getElementById('p1-impact').value.trim();
+    document.getElementById('btn-phase1').disabled = !(selectedStrategy && e && c && i);
+  }
+
+  ['p1-energy', 'p1-cost', 'p1-impact'].forEach(id => {
+    document.getElementById(id).addEventListener('input', checkPhase1Ready);
+  });
+
+  document.getElementById('btn-phase1').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-phase1');
+    btn.disabled = true; btn.textContent = 'Submitting...';
+    try {
+      const res = await fetch('/api/phase1', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId,
+          strategy: selectedStrategy,
+          energyNumber: document.getElementById('p1-energy').value.trim(),
+          costNumber: document.getElementById('p1-cost').value.trim(),
+          impactNumber: document.getElementById('p1-impact').value.trim()
+        })
+      });
+      const data = await res.json();
+      if (data.error) { alert(data.error); btn.disabled = false; btn.textContent = 'Submit My Bet'; return; }
+      phase1Submitted = true;
+      saveSession();
+      renderScreen();
+    } catch(e) {
+      alert('Connection error. Try again.');
+      btn.disabled = false; btn.textContent = 'Submit My Bet';
+    }
+  });
+
+  // ── Phase 2 ──────────────────────────────────────────────────────
+  function checkMoonshotReady() {
+    const y = document.getElementById('ms-year').value;
+    const g = document.getElementById('ms-goal').value.trim();
+    const m = document.getElementById('ms-metric').value.trim();
+    const t = document.getElementById('ms-target').value.trim();
+    const f = document.getElementById('ms-funding').value.trim();
+    document.getElementById('btn-moonshot').disabled = !(y && g && m && t && f);
+  }
+
+  ['ms-year', 'ms-goal', 'ms-metric', 'ms-target', 'ms-funding'].forEach(id => {
+    document.getElementById(id).addEventListener('input', checkMoonshotReady);
+    document.getElementById(id).addEventListener('change', checkMoonshotReady);
+  });
+
+  document.getElementById('btn-moonshot').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-moonshot');
+    btn.disabled = true; btn.textContent = 'Submitting...';
+    try {
+      const res = await fetch('/api/moonshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          teamId: studentTeam,
+          year: document.getElementById('ms-year').value,
+          goal: document.getElementById('ms-goal').value.trim(),
+          metric: document.getElementById('ms-metric').value.trim(),
+          targetNumber: document.getElementById('ms-target').value.trim(),
+          funding: document.getElementById('ms-funding').value.trim()
+        })
+      });
+      const data = await res.json();
+      if (data.error) { alert(data.error); btn.disabled = false; btn.textContent = 'Submit Moonshot'; return; }
+      moonshotSubmitted = true;
+      saveSession();
+      renderScreen();
+    } catch(e) {
+      alert('Connection error. Try again.');
+      btn.disabled = false; btn.textContent = 'Submit Moonshot';
+    }
+  });
+
+  // ── Phase 3 ──────────────────────────────────────────────────────
+  let moonshotTeams = {};
+
+  function buildFundingRows(moonshots) {
+    moonshotTeams = moonshots;
+    const container = document.getElementById('funding-rows');
+    container.innerHTML = '';
+    const teamIds = Object.keys(moonshots).map(Number).sort((a, b) => a - b);
+    if (teamIds.length === 0) {
+      container.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">No moonshots submitted yet.</p>';
+      return;
+    }
+    teamIds.forEach(tid => {
+      const ms = moonshots[tid];
+      const row = document.createElement('div');
+      row.className = 'funding-row';
+      row.innerHTML = `
+        <div class="funding-team">Team ${tid}</div>
+        <div class="funding-goal">${escapeHtml(ms.goal).substring(0, 60)}${ms.goal.length > 60 ? '...' : ''}</div>
+        <input type="number" class="funding-input" data-team="${tid}" value="0" min="0" max="100" inputmode="numeric">
+      `;
+      container.appendChild(row);
+    });
+    container.querySelectorAll('.funding-input').forEach(input => {
+      input.addEventListener('input', updateFundingTotal);
+    });
+    updateFundingTotal();
+  }
+
+  function updateFundingTotal() {
+    let total = 0;
+    document.querySelectorAll('.funding-input').forEach(input => {
+      total += parseInt(input.value) || 0;
+    });
+    const el = document.getElementById('funding-total');
+    el.textContent = `Total: ${total} / 100`;
+    el.className = 'funding-total ' + (total === 100 ? 'valid' : 'invalid');
+    document.getElementById('btn-fund').disabled = (total !== 100);
+  }
+
+  document.getElementById('btn-fund').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-fund');
+    btn.disabled = true; btn.textContent = 'Submitting...';
+    const allocations = {};
+    document.querySelectorAll('.funding-input').forEach(input => {
+      allocations[input.dataset.team] = parseInt(input.value) || 0;
+    });
+    try {
+      const res = await fetch('/api/fund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId, allocations })
+      });
+      const data = await res.json();
+      if (data.error) { alert(data.error); btn.disabled = false; btn.textContent = 'Lock In My Votes'; return; }
+      fundingSubmitted = true;
+      saveSession();
+      renderScreen();
+    } catch(e) {
+      alert('Connection error. Try again.');
+      btn.disabled = false; btn.textContent = 'Lock In My Votes';
+    }
+  });
+
+  // ── Screen rendering ─────────────────────────────────────────────
+  function renderScreen() {
+    hideAll();
+    if (!studentId) { show($join); return; }
+
+    if (currentPhase === 1) {
+      if (phase1Submitted) show($p1done);
+      else show($p1);
+    } else if (currentPhase === 2) {
+      document.getElementById('my-team-num').textContent = studentTeam;
+      // Check if our team already has a moonshot
+      if (moonshotSubmitted) {
+        document.getElementById('moonshot-form-area').classList.add('hidden');
+        document.getElementById('moonshot-done').classList.remove('hidden');
+      } else {
+        document.getElementById('moonshot-form-area').classList.remove('hidden');
+        document.getElementById('moonshot-done').classList.add('hidden');
+      }
+      show($p2);
+    } else if (currentPhase === 3) {
+      if (fundingSubmitted) {
+        document.getElementById('funding-form-area').classList.add('hidden');
+        document.getElementById('funding-done').classList.remove('hidden');
+      } else {
+        document.getElementById('funding-form-area').classList.remove('hidden');
+        document.getElementById('funding-done').classList.add('hidden');
+      }
+      show($p3);
+    } else if (currentPhase >= 4) {
+      show($done);
+    }
+  }
+
+  // ── Polling ───────────────────────────────────────────────────────
+  async function poll() {
+    try {
+      const res = await fetch('/api/state');
+      const data = await res.json();
+      const prevPhase = currentPhase;
+      currentPhase = data.phase;
+      numTeams = data.numTeams;
+
+      // If team already submitted moonshot, mark it
+      if (studentTeam && data.moonshots[studentTeam] && !moonshotSubmitted) {
+        moonshotSubmitted = true;
+        saveSession();
+      }
+
+      // Build funding rows if entering phase 3
+      if (currentPhase === 3 && !fundingSubmitted) {
+        buildFundingRows(data.moonshots);
+      }
+
+      // Re-build team grid if needed (before joining)
+      if (!studentId) buildTeamGrid(data.numTeams);
+
+      renderScreen();
+    } catch(e) { /* silent — flaky wifi */ }
+  }
+
+  // Initial load
+  buildTeamGrid(numTeams);
+  renderScreen();
+  poll();
+  setInterval(poll, 2000);
+
+  function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+  }
+})();
+</script>
+</body>
+</html>
